@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Booking Desk — панель управления заявками beauty-студии">
+  <title>Заявки — Booking Desk</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="sidebar-overlay" data-sidebar-overlay hidden></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Основная навигация">
+      <div class="sidebar__header">
+        <a class="brand" href="#" aria-label="Booking Desk — на главную">
+          <span class="brand__mark" aria-hidden="true">B</span>
+          <span>Booking Desk</span>
+        </a>
+        <button class="sidebar__close" type="button" data-menu-close aria-label="Закрыть меню">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <nav class="sidebar__nav">
+        <a class="nav-link" href="#overview">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>
+          <span>Обзор</span>
+        </a>
+        <a class="nav-link nav-link--active" href="#bookings" aria-current="page">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 2v3M17 2v3M4 9h16M5 4h14a1 1 0 0 1 1 1v15H4V5a1 1 0 0 1 1-1Z"/></svg>
+          <span>Заявки</span>
+          <span class="nav-link__count" id="sidebarBookingCount" aria-label="Количество заявок"></span>
+        </a>
+        <a class="nav-link" href="#clients">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-6A3.5 3.5 0 0 0 3 18.5V20M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11a3 3 0 1 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg>
+          <span>Клиенты</span>
+        </a>
+        <a class="nav-link" href="#settings">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.33.7.6 1 .3.28.68.42 1.1.4h.1v4h-.1a1.7 1.7 0 0 0-1.7.6Z"/></svg>
+          <span>Настройки</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <span class="studio-avatar" aria-hidden="true">ES</span>
+        <div>
+          <strong>Élan Studio</strong>
+          <span>Администратор</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="bookings">
+      <div class="mobile-bar">
+        <button class="menu-button" type="button" data-menu-open aria-controls="sidebar" aria-expanded="false" aria-label="Открыть меню">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
+        <span class="mobile-brand">Booking Desk</span>
+      </div>
+
+      <header class="page-header">
+        <div>
+          <p class="page-header__eyebrow">Beauty-студия</p>
+          <h1>Заявки</h1>
+          <p class="page-header__subtitle">Управление записями клиентов</p>
+        </div>
+        <div class="page-header__actions">
+          <time class="current-date" id="currentDate" aria-label="Текущая дата"></time>
+          <button class="primary-button" type="button" disabled title="Добавление заявок появится в следующей версии">
+            <span aria-hidden="true">+</span>
+            Добавить заявку
+            <small>Скоро</small>
+          </button>
+        </div>
+      </header>
+
+      <section class="stats-grid" aria-label="Статистика заявок">
+        <article class="stat-card stat-card--total">
+          <span class="stat-card__label">Всего заявок</span>
+          <strong class="stat-card__value" data-stat="total"></strong>
+          <span class="stat-card__note">В базе</span>
+        </article>
+        <article class="stat-card stat-card--new">
+          <span class="stat-card__label">Новые</span>
+          <strong class="stat-card__value" data-stat="new"></strong>
+          <span class="stat-card__note">Ждут ответа</span>
+        </article>
+        <article class="stat-card stat-card--confirmed">
+          <span class="stat-card__label">Подтверждены</span>
+          <strong class="stat-card__value" data-stat="confirmed"></strong>
+          <span class="stat-card__note">Запись согласована</span>
+        </article>
+        <article class="stat-card stat-card--completed">
+          <span class="stat-card__label">Завершены</span>
+          <strong class="stat-card__value" data-stat="completed"></strong>
+          <span class="stat-card__note">Услуга оказана</span>
+        </article>
+      </section>
+
+      <section class="bookings-panel" aria-labelledby="bookingsTitle">
+        <div class="panel-header">
+          <div>
+            <h2 id="bookingsTitle">Все заявки</h2>
+            <p id="resultsCount" aria-live="polite"></p>
+          </div>
+          <div class="filters" role="search">
+            <label class="search-field" for="bookingSearch">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              <span class="visually-hidden">Поиск заявок</span>
+              <input id="bookingSearch" type="search" placeholder="Имя, телефон или услуга" autocomplete="off">
+            </label>
+            <label class="select-field" for="statusFilter">
+              <span class="visually-hidden">Фильтр по статусу</span>
+              <select id="statusFilter">
+                <option value="all">Все статусы</option>
+                <option value="new">Новая</option>
+                <option value="confirmed">Подтверждена</option>
+                <option value="completed">Завершена</option>
+                <option value="cancelled">Отменена</option>
+              </select>
+            </label>
+            <button class="reset-button" id="resetFilters" type="button" disabled>Сбросить</button>
+          </div>
+        </div>
+
+        <div class="table-scroll" tabindex="0" aria-label="Таблица заявок, доступна горизонтальная прокрутка">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Клиент</th>
+                <th scope="col">Контакт</th>
+                <th scope="col">Услуга</th>
+                <th scope="col">Дата и время</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
