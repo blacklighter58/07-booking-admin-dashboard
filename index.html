@@ -69,10 +69,9 @@
         </div>
         <div class="page-header__actions">
           <time class="current-date" id="currentDate" aria-label="Текущая дата"></time>
-          <button class="primary-button" type="button" disabled title="Добавление заявок появится в следующей версии">
+          <button class="primary-button" id="addBookingButton" type="button">
             <span aria-hidden="true">+</span>
             Добавить заявку
-            <small>Скоро</small>
           </button>
         </div>
       </header>
@@ -144,6 +143,79 @@
       </section>
     </main>
   </div>
+
+  <dialog class="booking-dialog" id="bookingDialog" aria-labelledby="bookingDialogTitle">
+    <form class="booking-form" id="bookingForm">
+      <header class="dialog-header">
+        <div>
+          <h2 id="bookingDialogTitle">Новая заявка</h2>
+          <p class="dialog-id" id="bookingDialogId" hidden></p>
+        </div>
+        <button class="dialog-close" type="button" data-dialog-close aria-label="Закрыть окно">&times;</button>
+      </header>
+
+      <div class="dialog-body">
+        <div class="form-grid">
+          <label class="form-field form-field--full" for="clientName">
+            <span>Имя клиента <b aria-hidden="true">*</b></span>
+            <input id="clientName" name="clientName" type="text" minlength="2" required autocomplete="name">
+          </label>
+
+          <label class="form-field form-field--full" for="phone">
+            <span>Телефон <b aria-hidden="true">*</b></span>
+            <input id="phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__">
+          </label>
+
+          <label class="form-field" for="service">
+            <span>Услуга <b aria-hidden="true">*</b></span>
+            <select id="service" name="service" required>
+              <option value="Брови">Брови</option>
+              <option value="Ламинирование ресниц">Ламинирование ресниц</option>
+              <option value="Дневной макияж">Дневной макияж</option>
+              <option value="Вечерний макияж">Вечерний макияж</option>
+              <option value="Комплекс">Комплекс</option>
+            </select>
+          </label>
+
+          <label class="form-field" for="bookingStatus">
+            <span>Статус <b aria-hidden="true">*</b></span>
+            <select id="bookingStatus" name="status" required>
+              <option value="new">Новая</option>
+              <option value="confirmed">Подтверждена</option>
+              <option value="completed">Завершена</option>
+              <option value="cancelled">Отменена</option>
+            </select>
+          </label>
+
+          <label class="form-field" for="bookingDate">
+            <span>Дата <b aria-hidden="true">*</b></span>
+            <input id="bookingDate" name="date" type="date" required>
+          </label>
+
+          <label class="form-field" for="bookingTime">
+            <span>Время <b aria-hidden="true">*</b></span>
+            <input id="bookingTime" name="time" type="time" required>
+          </label>
+
+          <label class="form-field form-field--full" for="comment">
+            <span>Комментарий</span>
+            <textarea id="comment" name="comment" maxlength="300" rows="3" placeholder="Пожелания клиента или заметка администратора"></textarea>
+            <small>Не более 300 символов</small>
+          </label>
+        </div>
+      </div>
+
+      <footer class="dialog-footer">
+        <button class="danger-button" id="deleteBookingButton" type="button" hidden>Удалить</button>
+        <div class="dialog-footer__actions">
+          <button class="secondary-button" type="button" data-dialog-close>Отмена</button>
+          <button class="primary-button" type="submit">Сохранить</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
   <script src="script.js"></script>
 </body>

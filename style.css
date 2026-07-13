@@ -44,14 +44,16 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 button,
 a,
 input,
-select {
+select,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -68,6 +70,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 .table-scroll:focus-visible {
   outline: 3px solid rgba(155, 90, 102, 0.25);
   outline-offset: 2px;
@@ -314,27 +317,18 @@ h1 {
   color: #fff;
   background: var(--accent);
   font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.primary-button:hover {
+  background: var(--accent-dark);
 }
 
 .primary-button > span {
   font-size: 19px;
   font-weight: 400;
   line-height: 1;
-}
-
-.primary-button small {
-  margin-left: 2px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.17);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.primary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.68;
 }
 
 .stats-grid {
@@ -695,6 +689,209 @@ tbody tr:hover {
   font-size: 12px;
 }
 
+.booking-dialog {
+  width: min(620px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 12px 28px rgba(21, 24, 28, 0.16);
+}
+
+.booking-dialog::backdrop {
+  background: rgba(20, 23, 27, 0.55);
+}
+
+.booking-form {
+  display: flex;
+  max-height: calc(100dvh - 34px);
+  flex-direction: column;
+}
+
+.dialog-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-header h2 {
+  margin-bottom: 1px;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.dialog-id {
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dialog-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 6px;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dialog-close:hover {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.dialog-body {
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px 14px;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
+.form-field b {
+  color: var(--accent);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid #d8dce1;
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.form-field input,
+.form-field select {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.form-field textarea {
+  min-height: 86px;
+  padding: 9px 11px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.form-field input:hover,
+.form-field select:hover,
+.form-field textarea:hover {
+  border-color: #b9bec5;
+}
+
+.form-field input:invalid:not(:focus):not(:placeholder-shown) {
+  border-color: #c77a7a;
+}
+
+.form-field small {
+  color: #9299a2;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.dialog-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.dialog-footer__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dialog-footer button {
+  min-height: 38px;
+  padding: 0 15px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.secondary-button {
+  cursor: pointer;
+  border: 1px solid #d8dce1;
+  color: var(--text-muted);
+  background: var(--surface);
+}
+
+.secondary-button:hover {
+  border-color: #b9bec5;
+  color: var(--text);
+}
+
+.danger-button {
+  cursor: pointer;
+  border: 1px solid #e1bcbc;
+  color: #a63f3f;
+  background: #fff5f5;
+}
+
+.danger-button:hover {
+  border-color: #cf9797;
+  background: #fceaea;
+}
+
+.toast {
+  position: fixed;
+  z-index: 60;
+  right: 22px;
+  bottom: 22px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 11px 15px;
+  border-radius: 7px;
+  color: #fff;
+  background: #2e343a;
+  box-shadow: 0 6px 16px rgba(21, 24, 28, 0.15);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.toast[hidden] {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .main-content {
     padding-right: 24px;
@@ -864,6 +1061,55 @@ tbody tr:hover {
   th:last-child,
   td:last-child {
     padding-right: 16px;
+  }
+
+  .booking-dialog {
+    width: calc(100% - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .booking-form {
+    max-height: calc(100dvh - 22px);
+  }
+
+  .dialog-header,
+  .dialog-body,
+  .dialog-footer {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field--full {
+    grid-column: auto;
+  }
+
+  .dialog-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .dialog-footer__actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    margin-left: 0;
+  }
+
+  .danger-button {
+    width: 100%;
+  }
+
+  .toast {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    max-width: none;
+    text-align: center;
   }
 }
 
