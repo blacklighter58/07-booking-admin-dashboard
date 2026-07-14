@@ -494,10 +494,28 @@ h1 {
   font-weight: 500;
 }
 
+.restore-button {
+  height: 38px;
+  padding: 0 12px;
+  cursor: pointer;
+  border: 1px solid #d8dce1;
+  border-radius: 6px;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .reset-button:disabled {
   cursor: default;
   color: #b0b5bb;
   background: #f6f7f8;
+}
+
+.restore-button:hover {
+  border-color: #b9bec5;
+  color: var(--text);
 }
 
 .table-scroll {
@@ -905,14 +923,22 @@ tbody tr:hover {
   }
 
   .filters {
+    display: grid;
     width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .search-field {
-    flex: 1;
+    grid-column: 1 / -1;
   }
 
   .search-field input {
+    width: 100%;
+  }
+
+  .select-field select,
+  .reset-button,
+  .restore-button {
     width: 100%;
   }
 }
@@ -1042,7 +1068,7 @@ tbody tr:hover {
 
   .filters {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .search-field {

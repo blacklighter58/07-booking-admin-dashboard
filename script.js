@@ -1,4 +1,8 @@
-const bookings = [
+const STORAGE_KEY = "bookingDesk.bookings.v1";
+const VALID_STATUSES = new Set(["new", "confirmed", "completed", "cancelled"]);
+let shouldSeedStorage = false;
+
+const initialBookings = [
   {
     id: 1042,
     clientName: "Анна Воронова",
@@ -122,7 +126,9 @@ const elements = {
   tableBody: document.querySelector("#bookingsTableBody"),
   search: document.querySelector("#bookingSearch"),
   statusFilter: document.querySelector("#statusFilter"),
+  sort: document.querySelector("#bookingSort"),
   resetButton: document.querySelector("#resetFilters"),
+  restoreDemoButton: document.querySelector("#restoreDemoButton"),
   resultsCount: document.querySelector("#resultsCount"),
   sidebarCount: document.querySelector("#sidebarBookingCount"),
   sidebar: document.querySelector("#sidebar"),
@@ -148,6 +154,7 @@ const elements = {
 
 let editingBookingId = null;
 let toastTimer;
+let bookings = loadBookings();
 
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
   day: "numeric",
@@ -165,12 +172,105 @@ function formatBookingDate(date) {
   return dateFormatter.format(new Date(`${date}T00:00:00`)).replace(" г.", "");
 }
 
+function cloneInitialBookings() {
+  return initialBookings.map((booking) => ({ ...booking }));
+}
+
+function normalizeBooking(rawBooking) {
+  if (!rawBooking || typeof rawBooking !== "object") return null;
+
+  const id = Number(rawBooking.id);
+  const clientName = typeof rawBooking.clientName === "string" ? rawBooking.clientName.trim() : "";
+  const phone = typeof rawBooking.phone === "string" ? rawBooking.phone.trim() : "";
+  const service = typeof rawBooking.service === "string" ? rawBooking.service.trim() : "";
+  const date = typeof rawBooking.date === "string" ? rawBooking.date : "";
+  const time = typeof rawBooking.time === "string" ? rawBooking.time : "";
+  const status = rawBooking.status;
+  const createdAt = typeof rawBooking.createdAt === "string" && !Number.isNaN(Date.parse(rawBooking.createdAt))
+    ? rawBooking.createdAt
+    : "1970-01-01T00:00:00.000Z";
+
+  if (
+    !Number.isSafeInteger(id) ||
+    id < 1 ||
+    !clientName ||
+    !phone ||
+    !service ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    !/^\d{2}:\d{2}$/.test(time) ||
+    !VALID_STATUSES.has(status)
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    clientName,
+    phone,
+    service,
+    date,
+    time,
+    status,
+    comment: typeof rawBooking.comment === "string" ? rawBooking.comment.slice(0, 300) : "",
+    createdAt
+  };
+}
+
+function loadBookings() {
+  try {
+    const storedBookings = localStorage.getItem(STORAGE_KEY);
+    if (storedBookings === null) {
+      shouldSeedStorage = true;
+      return cloneInitialBookings();
+    }
+
+    const parsedBookings = JSON.parse(storedBookings);
+    if (!Array.isArray(parsedBookings)) throw new Error("Сохранённые заявки имеют неверный формат");
+
+    return parsedBookings.map(normalizeBooking).filter(Boolean);
+  } catch (error) {
+    console.warn("Не удалось загрузить сохранённые заявки. Восстановлены демо-данные.", error);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (removeError) {
+      console.warn("Не удалось удалить повреждённые сохранённые заявки.", removeError);
+    }
+    return cloneInitialBookings();
+  }
+}
+
+function saveBookings() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+    return true;
+  } catch (error) {
+    console.error("Не удалось сохранить заявки.", error);
+    showToast("Не удалось сохранить изменения");
+    return false;
+  }
+}
+
+function sortBookings(bookingsToSort) {
+  return [...bookingsToSort].sort((firstBooking, secondBooking) => {
+    if (elements.sort.value === "date-asc") {
+      return `${firstBooking.date}T${firstBooking.time}`.localeCompare(`${secondBooking.date}T${secondBooking.time}`);
+    }
+    if (elements.sort.value === "date-desc") {
+      return `${secondBooking.date}T${secondBooking.time}`.localeCompare(`${firstBooking.date}T${firstBooking.time}`);
+    }
+    if (elements.sort.value === "name-asc") {
+      return firstBooking.clientName.localeCompare(secondBooking.clientName, "ru-RU");
+    }
+    return Date.parse(secondBooking.createdAt) - Date.parse(firstBooking.createdAt) || secondBooking.id - firstBooking.id;
+  });
+}
+
 function getFilteredBookings() {
   const query = elements.search.value.trim().toLocaleLowerCase("ru-RU");
   const status = elements.statusFilter.value;
   const queryDigits = query.replace(/\D/g, "");
 
-  return bookings.filter((booking) => {
+  const filteredBookings = bookings.filter((booking) => {
     const searchableText = [booking.clientName, booking.phone, booking.service]
       .join(" ")
       .toLocaleLowerCase("ru-RU");
@@ -181,6 +281,8 @@ function getFilteredBookings() {
 
     return (matchesText || matchesPhone) && matchesStatus;
   });
+
+  return sortBookings(filteredBookings);
 }
 
 function createBookingRow(booking) {
@@ -303,6 +405,19 @@ function resetFilters() {
   elements.search.focus();
 }
 
+function restoreDemoBookings() {
+  const confirmationMessage = "Вернуть исходные демо-данные? Все сохранённые изменения будут удалены.";
+  if (!confirm(confirmationMessage)) return;
+
+  bookings = cloneInitialBookings();
+  const saved = saveBookings();
+  elements.search.value = "";
+  elements.statusFilter.value = "all";
+  elements.sort.value = "created-desc";
+  refreshBookings();
+  if (saved) showToast("Демо-данные восстановлены");
+}
+
 function openSidebar() {
   elements.sidebar.classList.add("is-open");
   elements.sidebarOverlay.hidden = false;
@@ -416,9 +531,10 @@ function saveBooking(event) {
     message = "Изменения сохранены";
   }
 
+  const saved = saveBookings();
   refreshBookings();
   closeBookingDialog();
-  showToast(message);
+  if (saved) showToast(message);
 }
 
 function deleteBooking() {
@@ -429,9 +545,10 @@ function deleteBooking() {
   const bookingIndex = bookings.findIndex((booking) => booking.id === bookingId);
   if (bookingIndex === -1) return;
   bookings.splice(bookingIndex, 1);
+  const saved = saveBookings();
   refreshBookings();
   closeBookingDialog();
-  showToast("Заявка удалена");
+  if (saved) showToast("Заявка удалена");
 }
 
 function handleBookingAction(event) {
@@ -456,7 +573,9 @@ function displayCurrentDate() {
 
 elements.search.addEventListener("input", renderBookings);
 elements.statusFilter.addEventListener("change", renderBookings);
+elements.sort.addEventListener("change", renderBookings);
 elements.resetButton.addEventListener("click", resetFilters);
+elements.restoreDemoButton.addEventListener("click", restoreDemoBookings);
 elements.tableBody.addEventListener("click", handleBookingAction);
 elements.addButton.addEventListener("click", openNewBooking);
 elements.bookingForm.addEventListener("submit", saveBooking);
@@ -482,5 +601,6 @@ window.addEventListener("resize", () => {
 });
 
 displayCurrentDate();
+if (shouldSeedStorage) saveBookings();
 renderStats();
 renderBookings();

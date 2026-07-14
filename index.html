@@ -121,7 +121,17 @@
                 <option value="cancelled">Отменена</option>
               </select>
             </label>
+            <label class="select-field" for="bookingSort">
+              <span class="visually-hidden">Сортировка заявок</span>
+              <select id="bookingSort">
+                <option value="created-desc">Сначала новые</option>
+                <option value="date-asc">Ближайшая запись</option>
+                <option value="date-desc">Поздняя запись</option>
+                <option value="name-asc">По имени</option>
+              </select>
+            </label>
             <button class="reset-button" id="resetFilters" type="button" disabled>Сбросить</button>
+            <button class="restore-button" id="restoreDemoButton" type="button">Восстановить демо</button>
           </div>
         </div>
 
