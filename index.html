@@ -23,23 +23,26 @@
       </div>
 
       <nav class="sidebar__nav">
-        <a class="nav-link" href="#overview">
+        <span class="nav-link nav-link--disabled" aria-disabled="true">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>
           <span>Обзор</span>
-        </a>
+          <span class="nav-link__soon">Скоро</span>
+        </span>
         <a class="nav-link nav-link--active" href="#bookings" aria-current="page">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 2v3M17 2v3M4 9h16M5 4h14a1 1 0 0 1 1 1v15H4V5a1 1 0 0 1 1-1Z"/></svg>
           <span>Заявки</span>
           <span class="nav-link__count" id="sidebarBookingCount" aria-label="Количество заявок"></span>
         </a>
-        <a class="nav-link" href="#clients">
+        <span class="nav-link nav-link--disabled" aria-disabled="true">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-6A3.5 3.5 0 0 0 3 18.5V20M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11a3 3 0 1 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg>
           <span>Клиенты</span>
-        </a>
-        <a class="nav-link" href="#settings">
+          <span class="nav-link__soon">Скоро</span>
+        </span>
+        <span class="nav-link nav-link--disabled" aria-disabled="true">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.33.7.6 1 .3.28.68.42 1.1.4h.1v4h-.1a1.7 1.7 0 0 0-1.7.6Z"/></svg>
           <span>Настройки</span>
-        </a>
+          <span class="nav-link__soon">Скоро</span>
+        </span>
       </nav>
 
       <div class="sidebar__footer">
@@ -66,6 +69,7 @@
           <p class="page-header__eyebrow">Beauty-студия</p>
           <h1>Заявки</h1>
           <p class="page-header__subtitle">Управление записями клиентов</p>
+          <p class="demo-note">Демо-режим <span aria-hidden="true">·</span> данные сохраняются только в этом браузере</p>
         </div>
         <div class="page-header__actions">
           <time class="current-date" id="currentDate" aria-label="Текущая дата"></time>

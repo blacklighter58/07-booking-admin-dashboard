@@ -155,6 +155,10 @@ const elements = {
 let editingBookingId = null;
 let toastTimer;
 let bookings = loadBookings();
+let initialFormState = "";
+let isFormDirty = false;
+let dialogTrigger = null;
+let dialogFocusTarget = null;
 
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
   day: "numeric",
@@ -168,8 +172,18 @@ const currentDateFormatter = new Intl.DateTimeFormat("ru-RU", {
   month: "long"
 });
 
+const createdDateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric",
+  month: "long",
+  year: "numeric"
+});
+
 function formatBookingDate(date) {
   return dateFormatter.format(new Date(`${date}T00:00:00`)).replace(" г.", "");
+}
+
+function formatCreatedAt(createdAt) {
+  return createdDateFormatter.format(new Date(createdAt));
 }
 
 function cloneInitialBookings() {
@@ -290,6 +304,7 @@ function createBookingRow(booking) {
 
   const clientCell = document.createElement("td");
   clientCell.className = "client-cell";
+  clientCell.dataset.label = "Клиент";
   const clientName = document.createElement("strong");
   clientName.textContent = booking.clientName;
   const bookingId = document.createElement("span");
@@ -298,6 +313,7 @@ function createBookingRow(booking) {
   clientCell.append(clientName, bookingId);
 
   const contactCell = document.createElement("td");
+  contactCell.dataset.label = "Контакт";
   const phoneLink = document.createElement("a");
   phoneLink.className = "phone-link";
   phoneLink.href = `tel:${booking.phone.replace(/\D/g, "")}`;
@@ -306,10 +322,12 @@ function createBookingRow(booking) {
 
   const serviceCell = document.createElement("td");
   serviceCell.className = "service-cell";
+  serviceCell.dataset.label = "Услуга";
   serviceCell.textContent = booking.service;
 
   const dateCell = document.createElement("td");
   dateCell.className = "date-cell";
+  dateCell.dataset.label = "Дата и время";
   const date = document.createElement("strong");
   date.textContent = formatBookingDate(booking.date);
   const time = document.createElement("span");
@@ -317,19 +335,28 @@ function createBookingRow(booking) {
   dateCell.append(date, time);
 
   const statusCell = document.createElement("td");
+  statusCell.dataset.label = "Статус";
   const status = document.createElement("span");
   status.className = `status-badge status-badge--${booking.status}`;
   status.textContent = statusLabels[booking.status];
   statusCell.append(status);
 
   const actionCell = document.createElement("td");
+  actionCell.className = "action-cell";
   const actionButton = document.createElement("button");
   actionButton.className = "row-action";
   actionButton.type = "button";
   actionButton.dataset.bookingId = booking.id;
   actionButton.setAttribute("aria-label", `Открыть заявку ${booking.id} клиента ${booking.clientName}`);
   actionButton.title = "Открыть заявку";
-  actionButton.textContent = "•••";
+  const actionIcon = document.createElement("span");
+  actionIcon.className = "row-action__icon";
+  actionIcon.setAttribute("aria-hidden", "true");
+  actionIcon.textContent = "•••";
+  const actionLabel = document.createElement("span");
+  actionLabel.className = "row-action__label";
+  actionLabel.textContent = "Открыть заявку";
+  actionButton.append(actionIcon, actionLabel);
   actionCell.append(actionButton);
 
   row.append(clientCell, contactCell, serviceCell, dateCell, statusCell, actionCell);
@@ -439,27 +466,72 @@ function resetBookingForm() {
   elements.phone.setCustomValidity("");
   elements.bookingStatus.value = "new";
   editingBookingId = null;
+  initialFormState = "";
+  isFormDirty = false;
 }
 
-function closeBookingDialog() {
-  if (elements.bookingDialog.open) elements.bookingDialog.close();
-  resetBookingForm();
+function getFormState() {
+  return JSON.stringify({
+    clientName: elements.clientName.value,
+    phone: elements.phone.value,
+    service: elements.service.value,
+    date: elements.bookingDate.value,
+    time: elements.bookingTime.value,
+    status: elements.bookingStatus.value,
+    comment: elements.comment.value
+  });
 }
 
-function openNewBooking() {
+function captureInitialFormState() {
+  initialFormState = getFormState();
+  isFormDirty = false;
+}
+
+function updateFormDirtyState() {
+  isFormDirty = elements.bookingDialog.open && getFormState() !== initialFormState;
+}
+
+function restoreDialogFocus() {
+  const focusTarget = dialogFocusTarget || dialogTrigger;
+  dialogFocusTarget = null;
+  dialogTrigger = null;
+
+  if (focusTarget && focusTarget.isConnected && !focusTarget.disabled) {
+    focusTarget.focus();
+  } else {
+    elements.addButton.focus();
+  }
+}
+
+function closeBookingDialog(options = {}) {
+  const { force = false, focusTarget = null } = options;
+  if (!elements.bookingDialog.open) {
+    resetBookingForm();
+    return true;
+  }
+  if (!force && isFormDirty && !confirm("Закрыть форму без сохранения изменений?")) return false;
+
+  dialogFocusTarget = focusTarget;
+  elements.bookingDialog.close();
+  return true;
+}
+
+function openNewBooking(trigger = elements.addButton) {
   resetBookingForm();
   elements.dialogTitle.textContent = "Новая заявка";
   elements.dialogId.hidden = true;
   elements.deleteButton.hidden = true;
   elements.bookingDialog.showModal();
+  dialogTrigger = trigger;
+  captureInitialFormState();
   elements.clientName.focus();
 }
 
-function openExistingBooking(booking) {
+function openExistingBooking(booking, trigger = document.activeElement) {
   resetBookingForm();
   editingBookingId = booking.id;
   elements.dialogTitle.textContent = `Заявка #${booking.id}`;
-  elements.dialogId.textContent = `ID заявки: ${booking.id}`;
+  elements.dialogId.textContent = `ID заявки: ${booking.id} · Создана ${formatCreatedAt(booking.createdAt)}`;
   elements.dialogId.hidden = false;
   elements.deleteButton.hidden = false;
   elements.clientName.value = booking.clientName;
@@ -470,6 +542,8 @@ function openExistingBooking(booking) {
   elements.bookingStatus.value = booking.status;
   elements.comment.value = booking.comment;
   elements.bookingDialog.showModal();
+  dialogTrigger = trigger;
+  captureInitialFormState();
   elements.clientName.focus();
 }
 
@@ -533,7 +607,7 @@ function saveBooking(event) {
 
   const saved = saveBookings();
   refreshBookings();
-  closeBookingDialog();
+  closeBookingDialog({ force: true });
   if (saved) showToast(message);
 }
 
@@ -547,7 +621,7 @@ function deleteBooking() {
   bookings.splice(bookingIndex, 1);
   const saved = saveBookings();
   refreshBookings();
-  closeBookingDialog();
+  closeBookingDialog({ force: true, focusTarget: elements.addButton });
   if (saved) showToast("Заявка удалена");
 }
 
@@ -556,7 +630,7 @@ function handleBookingAction(event) {
   if (!button) return;
 
   const booking = bookings.find((item) => item.id === Number(button.dataset.bookingId));
-  if (booking) openExistingBooking(booking);
+  if (booking) openExistingBooking(booking, button);
 }
 
 function displayCurrentDate() {
@@ -577,21 +651,32 @@ elements.sort.addEventListener("change", renderBookings);
 elements.resetButton.addEventListener("click", resetFilters);
 elements.restoreDemoButton.addEventListener("click", restoreDemoBookings);
 elements.tableBody.addEventListener("click", handleBookingAction);
-elements.addButton.addEventListener("click", openNewBooking);
+elements.addButton.addEventListener("click", () => openNewBooking(elements.addButton));
 elements.bookingForm.addEventListener("submit", saveBooking);
 elements.deleteButton.addEventListener("click", deleteBooking);
 document.querySelectorAll("[data-dialog-close]").forEach((button) => {
-  button.addEventListener("click", closeBookingDialog);
+  button.addEventListener("click", () => closeBookingDialog());
 });
 elements.bookingDialog.addEventListener("click", (event) => {
   if (event.target === elements.bookingDialog) closeBookingDialog();
 });
-elements.bookingDialog.addEventListener("close", resetBookingForm);
+elements.bookingDialog.addEventListener("cancel", (event) => {
+  if (!isFormDirty) return;
+  event.preventDefault();
+  closeBookingDialog();
+});
+elements.bookingDialog.addEventListener("close", () => {
+  resetBookingForm();
+  restoreDialogFocus();
+});
+elements.bookingForm.addEventListener("input", updateFormDirtyState);
+elements.bookingForm.addEventListener("change", updateFormDirtyState);
 elements.menuOpenButton.addEventListener("click", openSidebar);
 elements.menuCloseButton.addEventListener("click", closeSidebar);
 elements.sidebarOverlay.addEventListener("click", closeSidebar);
 elements.sidebar.addEventListener("click", (event) => {
-  if (event.target.closest(".nav-link") && window.innerWidth <= 820) closeSidebar();
+  const navLink = event.target.closest(".nav-link");
+  if (navLink && !navLink.classList.contains("nav-link--disabled") && window.innerWidth <= 820) closeSidebar();
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && elements.sidebar.classList.contains("is-open")) closeSidebar();
