@@ -10,6 +10,7 @@ import { addCalendarDays, formatCalendarTitle, getCalendarRange, minutesToTime, 
 import { renderCalendarGrid } from "./src/calendar/calendarGrid.js";
 import { BOOKING_STATUS_LABELS, normalizeBookingStatus } from "./src/bookingStatuses.js";
 import { refreshBookingViews } from "./src/bookingRefresh.js";
+import { normalizeBookingTime } from "./src/bookingTime.js";
 
 const LOGIN_ROUTE = "#/login";
 const BOOKINGS_ROUTE = "#bookings";
@@ -258,7 +259,7 @@ function normalizeBooking(rawBooking) {
   const phone = typeof rawBooking.phone === "string" ? rawBooking.phone.trim() : "";
   const service = typeof rawBooking.service === "string" ? rawBooking.service.trim() : "";
   const date = normalizeBookingDate(rawBooking.date);
-  const time = typeof rawBooking.time === "string" ? rawBooking.time : "";
+  const time = normalizeBookingTime(rawBooking.time);
   const status = normalizeBookingStatus(rawBooking.status);
   const createdAt = typeof rawBooking.createdAt === "string" && !Number.isNaN(Date.parse(rawBooking.createdAt))
     ? rawBooking.createdAt
