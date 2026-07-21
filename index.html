@@ -8,7 +8,31 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-shell">
+  <section class="login-shell" id="loginPage" aria-labelledby="loginTitle" hidden>
+    <div class="login-card">
+      <div class="login-brand" aria-hidden="true">B</div>
+      <p class="login-eyebrow">Booking Desk</p>
+      <h1 id="loginTitle">Вход для администратора</h1>
+      <p class="login-description">Войдите, чтобы управлять заявками клиентов.</p>
+      <form class="login-form" id="loginForm" novalidate>
+        <label for="loginInput">
+          <span>Логин</span>
+          <input id="loginInput" name="login" type="text" autocomplete="username" required autofocus>
+        </label>
+        <label for="passwordInput">
+          <span>Пароль</span>
+          <input id="passwordInput" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <p class="login-error" id="loginError" role="alert" aria-live="polite" hidden></p>
+        <button class="login-submit" id="loginSubmit" type="submit">
+          <span class="login-submit__label">Войти</span>
+          <span class="login-submit__loader" aria-hidden="true" hidden></span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <div class="app-shell" id="dashboardPage" hidden>
     <div class="sidebar-overlay" data-sidebar-overlay hidden></div>
 
     <aside class="sidebar" id="sidebar" aria-label="Основная навигация">
@@ -23,34 +47,38 @@
       </div>
 
       <nav class="sidebar__nav">
-        <span class="nav-link nav-link--disabled" aria-disabled="true">
+        <a class="nav-link" href="#overview" id="overviewNavLink">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>
           <span>Обзор</span>
-          <span class="nav-link__soon">Скоро</span>
-        </span>
+        </a>
         <a class="nav-link nav-link--active" href="#bookings" aria-current="page">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 2v3M17 2v3M4 9h16M5 4h14a1 1 0 0 1 1 1v15H4V5a1 1 0 0 1 1-1Z"/></svg>
           <span>Заявки</span>
           <span class="nav-link__count" id="sidebarBookingCount" aria-label="Количество заявок"></span>
         </a>
-        <span class="nav-link nav-link--disabled" aria-disabled="true">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-6A3.5 3.5 0 0 0 3 18.5V20M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11a3 3 0 1 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg>
+        <a class="nav-link" href="#calendar" id="calendarNavLink">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v15H4V5Zm0 5h16M8 2v6M16 2v6"/></svg>
+          <span>Календарь</span>
+        </a>
+        <a class="nav-link" href="#services" id="servicesNavLink"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7.5 11.5 3 20 7.5v9L12.5 21 4 16.5v-9ZM4 7.5l8.5 4.5L20 7.5M12.5 12v9"/></svg><span>Услуги</span></a>
+        <a class="nav-link" href="#employees" id="employeesNavLink"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-6A3.5 3.5 0 0 0 3 18.5V20M9.5 11a4 4 0 1 0 0-8M17 11a3 3 0 1 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg><span>Сотрудники</span></a>
+        <a class="nav-link" href="#clients" id="clientsNavLink">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-6A3.5 3.5 0 0 0 3 18.5V20M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11a3 3 0 1 0 0-6M17 11a3 3 0 1 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg>
           <span>Клиенты</span>
-          <span class="nav-link__soon">Скоро</span>
-        </span>
-        <span class="nav-link nav-link--disabled" aria-disabled="true">
+        </a>
+        <a class="nav-link" href="#settings" id="settingsNavLink">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.33.7.6 1 .3.28.68.42 1.1.4h.1v4h-.1a1.7 1.7 0 0 0-1.7.6Z"/></svg>
           <span>Настройки</span>
-          <span class="nav-link__soon">Скоро</span>
-        </span>
+        </a>
       </nav>
 
       <div class="sidebar__footer">
         <span class="studio-avatar" aria-hidden="true">ES</span>
         <div>
-          <strong>Élan Studio</strong>
+          <strong id="sidebarBusinessName">Élan Studio</strong>
           <span>Администратор</span>
         </div>
+        <button class="logout-button" id="logoutButton" type="button">Выйти</button>
       </div>
     </aside>
 
@@ -69,10 +97,14 @@
           <p class="page-header__eyebrow">Beauty-студия</p>
           <h1>Заявки</h1>
           <p class="page-header__subtitle">Управление записями клиентов</p>
-          <p class="demo-note">Демо-режим <span aria-hidden="true">·</span> данные сохраняются только в этом браузере</p>
+          <p class="demo-note" id="dataSourceNote">API-режим <span aria-hidden="true">·</span> заявки загружаются из Booking API</p>
         </div>
         <div class="page-header__actions">
           <time class="current-date" id="currentDate" aria-label="Текущая дата"></time>
+          <div class="admin-chip" aria-label="Текущий пользователь: администратор">
+            <span class="admin-chip__avatar" aria-hidden="true">АД</span>
+            <span class="admin-chip__content"><strong>Администратор</strong><small id="headerBusinessName">Booking Desk</small></span>
+          </div>
           <button class="primary-button" id="addBookingButton" type="button">
             <span aria-hidden="true">+</span>
             Добавить заявку
@@ -103,6 +135,45 @@
         </article>
       </section>
 
+      <section class="overview-panel" id="overviewPanel" hidden aria-labelledby="overviewTitle">
+        <div class="overview-panel__header"><div><p class="page-header__eyebrow">CRM</p><h2 id="overviewTitle">Обзор</h2><p id="overviewDate"></p></div><div class="overview-periods" role="group" aria-label="Период"><button type="button" data-overview-period="today">Сегодня</button><button type="button" data-overview-period="7d">7 дней</button><button type="button" data-overview-period="30d">30 дней</button></div></div>
+        <div class="overview-actions"><button class="primary-button" id="overviewNewBooking" type="button">+ Новая запись</button><a class="secondary-button" href="#calendar">Календарь</a><button class="secondary-button" id="overviewNewClient" type="button">Добавить клиента</button></div>
+        <p class="overview-state" id="overviewState" role="status"></p>
+        <div class="overview-grid" id="overviewContent" hidden>
+          <section class="overview-today"><h3>Ситуация за период</h3><strong id="overviewTotal">0 записей</strong><p id="overviewProgressText"></p><div class="overview-progress"><span id="overviewProgress"></span></div><dl><div><dt>Подтверждены</dt><dd id="overviewConfirmed">0</dd></div><div><dt>Ожидают</dt><dd id="overviewPending">0</dd></div><div><dt>Ожидаемая выручка</dt><dd id="overviewExpected">0 ₽</dd></div><div><dt>Фактическая выручка</dt><dd id="overviewCompletedRevenue">0 ₽</dd></div></dl></section>
+          <section class="overview-attention"><h3>Требует внимания</h3><div id="overviewAttention"></div></section>
+          <section class="overview-upcoming"><h3>Ближайшие записи</h3><div id="overviewUpcoming"></div><a href="#calendar">Смотреть календарь →</a></section>
+          <section class="overview-wide"><h3>Динамика записей</h3><div class="overview-chart" id="overviewChart"></div></section>
+          <section><h3>Загрузка сотрудников</h3><div id="overviewEmployees"></div></section>
+          <section><h3>Популярные услуги</h3><div id="overviewServices"></div></section>
+          <section><h3>Источники заявок</h3><div id="overviewSources"></div></section>
+          <section><h3>Свободные окна</h3><div id="overviewFreeSlots"></div></section>
+        </div>
+      </section>
+
+      <section class="bookings-overview" id="bookingsOverview" aria-label="Сводка по заявкам" hidden>
+        <article class="booking-insight booking-insight--statuses">
+          <h2>Заявки по статусам</h2>
+          <div class="booking-status-summary"><div class="booking-status-donut" id="bookingStatusDonut" aria-hidden="true"><strong id="bookingStatusTotal">0</strong><span>всего</span></div><div class="booking-status-list" id="bookingStatusList"></div></div>
+        </article>
+        <article class="booking-insight">
+          <h2>Ближайшие записи</h2>
+          <div class="booking-upcoming-list" id="bookingUpcomingList"></div>
+          <a class="booking-overview-link" href="#calendar">Смотреть календарь <span aria-hidden="true">→</span></a>
+        </article>
+        <article class="booking-insight">
+          <h2>Источники заявок</h2>
+          <div class="booking-source-list" id="bookingSourceList"></div>
+        </article>
+      </section>
+
+      <section class="clients-overview" id="clientsOverview" aria-label="Статистика клиентов" hidden>
+        <article class="client-stat-card client-stat-card--rose"><span class="client-stat-card__icon" aria-hidden="true">◌</span><div><span>Всего клиентов</span><strong data-client-stat="total">0</strong><small data-client-stat-note="total">Загружаем данные</small></div></article>
+        <article class="client-stat-card client-stat-card--violet"><span class="client-stat-card__icon" aria-hidden="true">+</span><div><span>Новые клиенты</span><strong data-client-stat="new">0</strong><small data-client-stat-note="new">Без посещений</small></div></article>
+        <article class="client-stat-card client-stat-card--green"><span class="client-stat-card__icon" aria-hidden="true">★</span><div><span>Постоянные клиенты</span><strong data-client-stat="regular">0</strong><small data-client-stat-note="regular">2+ завершённых визита</small></div></article>
+        <article class="client-stat-card client-stat-card--gold"><span class="client-stat-card__icon" aria-hidden="true">₽</span><div><span>Сумма на странице</span><strong data-client-stat="amount">0 ₽</strong><small data-client-stat-note="amount">По текущей выборке</small></div></article>
+      </section>
+
       <section class="bookings-panel" aria-labelledby="bookingsTitle">
         <div class="panel-header">
           <div>
@@ -121,8 +192,16 @@
                 <option value="all">Все статусы</option>
                 <option value="new">Новая</option>
                 <option value="confirmed">Подтверждена</option>
+                <option value="in_progress">В работе</option>
                 <option value="completed">Завершена</option>
                 <option value="cancelled">Отменена</option>
+                <option value="unknown">Не указан</option>
+              </select>
+            </label>
+            <label class="select-field" for="employeeFilter">
+              <span class="visually-hidden">Фильтр по сотруднику</span>
+              <select id="employeeFilter">
+                <option value="all">Все сотрудники</option>
               </select>
             </label>
             <label class="select-field" for="bookingSort">
@@ -135,7 +214,7 @@
               </select>
             </label>
             <button class="reset-button" id="resetFilters" type="button" disabled>Сбросить</button>
-            <button class="restore-button" id="restoreDemoButton" type="button">Восстановить демо</button>
+            <button class="restore-button" id="refreshBookingsButton" type="button">Обновить</button>
           </div>
         </div>
 
@@ -146,8 +225,10 @@
                 <th scope="col">Клиент</th>
                 <th scope="col">Контакт</th>
                 <th scope="col">Услуга</th>
+                <th scope="col">Сотрудник</th>
                 <th scope="col">Дата и время</th>
                 <th scope="col">Статус</th>
+                <th scope="col">Источник</th>
                 <th scope="col">Действия</th>
               </tr>
             </thead>
@@ -155,8 +236,168 @@
           </table>
         </div>
       </section>
+
+      <section class="calendar-panel" id="calendarPanel" aria-labelledby="calendarTitle" hidden>
+        <div class="calendar-panel__header">
+          <div class="calendar-panel__heading">
+            <p class="page-header__eyebrow">Расписание</p>
+            <h2 id="calendarTitle">Календарь записей</h2>
+          </div>
+          <div class="calendar-toolbar" aria-label="Управление календарём">
+            <div class="calendar-toolbar__group" role="group" aria-label="Навигация по календарю">
+              <button type="button" class="calendar-nav" data-calendar-nav="previous" aria-label="Предыдущий период">←</button>
+              <button type="button" class="calendar-today" id="calendarTodayButton">Сегодня</button>
+              <button type="button" class="calendar-nav" data-calendar-nav="next" aria-label="Следующий период">→</button>
+            </div>
+            <p class="calendar-period" id="calendarPeriod" aria-live="polite"></p>
+            <div class="calendar-toolbar__end">
+              <label class="select-field" for="calendarEmployeeFilter">
+                <span class="visually-hidden">Сотрудник в календаре</span>
+                <select id="calendarEmployeeFilter"><option value="all">Все сотрудники</option></select>
+              </label>
+              <div class="calendar-toolbar__group" role="group" aria-label="Режим отображения">
+                <button type="button" class="calendar-toggle is-active" data-calendar-view="day">День</button>
+                <button type="button" class="calendar-toggle" data-calendar-view="week">Неделя</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="calendar-layout">
+          <div class="calendar-layout__main">
+            <p class="calendar-state" id="calendarState" role="status" hidden></p>
+            <div class="calendar-scroll" id="calendarGrid" tabindex="0" aria-label="Календарь записей"></div>
+          </div>
+          <aside class="calendar-insights" aria-label="Сводка по календарю">
+            <section class="calendar-insight">
+              <h3>Ближайшая запись</h3>
+              <div id="calendarUpcoming" class="calendar-upcoming"></div>
+            </section>
+            <section class="calendar-insight">
+              <h3>Статистика выбранной недели</h3>
+              <p class="calendar-stats__period" id="calendarStatsPeriod"></p>
+              <div class="calendar-stats" aria-label="Статистика заявок">
+                <div><span>Всего записей</span><strong id="calendarStatTotal">0</strong></div>
+                <div><span>Подтверждено</span><strong id="calendarStatConfirmed">0</strong></div>
+                <div><span>Ожидают</span><strong id="calendarStatPending">0</strong></div>
+                <div><span>Отменено</span><strong id="calendarStatCancelled">0</strong></div>
+              </div>
+              <div class="calendar-donut" id="calendarDonut" aria-label="Соотношение статусов">
+                <strong id="calendarDonutTotal">0</strong><span>всего</span>
+              </div>
+              <p class="calendar-stats__all">Всего заявок в системе: <strong id="calendarStatAll">0</strong></p>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="management-panel" id="servicesPanel" hidden aria-labelledby="servicesTitle">
+        <header class="management-panel__header"><div><p class="page-header__eyebrow">Каталог</p><h2 id="servicesTitle">Услуги</h2><p>Настройте длительность, стоимость и доступность услуг.</p></div><button class="primary-button" type="button" id="addServiceButton">+ Добавить услугу</button></header>
+        <p class="management-state" id="servicesState" role="status"></p><div class="table-scroll"><table class="management-table"><thead><tr><th>Услуга</th><th>Длительность</th><th>Цена</th><th>Сотрудники</th><th>Статус</th><th></th></tr></thead><tbody id="servicesTableBody"></tbody></table></div>
+      </section>
+
+      <section class="management-panel" id="employeesPanel" hidden aria-labelledby="employeesTitle">
+        <header class="management-panel__header"><div><p class="page-header__eyebrow">Команда</p><h2 id="employeesTitle">Сотрудники</h2><p>Управляйте услугами и индивидуальным расписанием.</p></div><button class="primary-button" type="button" id="addEmployeeButton">+ Добавить сотрудника</button></header>
+        <p class="management-state" id="employeesState" role="status"></p><div class="table-scroll"><table class="management-table"><thead><tr><th>Сотрудник</th><th>Услуги</th><th>Расписание</th><th>Будущие записи</th><th>Статус</th><th></th></tr></thead><tbody id="employeesTableBody"></tbody></table></div>
+      </section>
+
+      <section class="management-panel clients-panel" id="clientsPanel" hidden aria-labelledby="clientsTitle">
+        <header class="management-panel__header">
+          <div><p class="page-header__eyebrow">CRM</p><h2 id="clientsTitle">Клиенты</h2><p id="clientsSummary">База клиентов и история посещений.</p></div>
+          <button class="primary-button" type="button" id="addClientButton">+ Добавить клиента</button>
+        </header>
+        <div class="clients-toolbar" role="search">
+          <label class="search-field"><span class="visually-hidden">Поиск клиентов</span><input id="clientsSearch" type="search" placeholder="Имя, телефон или Telegram" autocomplete="off"></label>
+          <label class="search-field clients-tag-search"><span class="visually-hidden">Фильтр по тегу</span><input id="clientsTagFilter" type="search" placeholder="Тег" autocomplete="off"></label>
+          <label class="select-field"><span class="visually-hidden">Фильтр клиентов</span><select id="clientsFavoriteFilter"><option value="">Все клиенты</option><option value="true">Только избранные</option></select></label>
+          <label class="select-field"><span class="visually-hidden">Сортировка клиентов</span><select id="clientsSort"><option value="updated">Недавно обновлённые</option><option value="name">По имени</option><option value="lastVisit">Последний визит</option><option value="nextVisit">Следующий визит</option><option value="visits">По посещениям</option><option value="totalAmount">По сумме</option></select></label>
+          <button class="restore-button" id="refreshClientsButton" type="button">Обновить</button>
+        </div>
+        <p class="management-state" id="clientsState" role="status"></p>
+        <div class="table-scroll"><table class="management-table clients-table"><thead><tr><th>Имя</th><th>Телефон</th><th>Telegram</th><th>Последний визит</th><th>Следующий визит</th><th>Посещения</th><th>Сумма</th><th>Теги</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div>
+        <footer class="clients-pagination"><button class="secondary-button" id="clientsPrevious" type="button">← Назад</button><span id="clientsPage" aria-live="polite"></span><button class="secondary-button" id="clientsNext" type="button">Вперёд →</button></footer>
+      </section>
+
+      <section class="management-panel settings-panel" id="settingsPanel" hidden aria-labelledby="settingsTitle">
+        <header class="management-panel__header"><div><p class="page-header__eyebrow">Управление</p><h2 id="settingsTitle">Настройки</h2><p>Параметры бизнеса, записи, уведомлений и доступа администратора.</p></div></header>
+        <div class="settings-tabs" role="tablist" aria-label="Разделы настроек">
+          <button type="button" class="is-active" data-settings-tab="general" role="tab">Общие</button>
+          <button type="button" data-settings-tab="booking" role="tab">Запись</button>
+          <button type="button" data-settings-tab="notifications" role="tab">Уведомления</button>
+          <button type="button" data-settings-tab="telegram" role="tab">Telegram</button>
+          <button type="button" data-settings-tab="security" role="tab">Безопасность</button>
+        </div>
+        <div class="settings-state-row"><p class="management-state" id="settingsState" role="status"></p><button class="secondary-button" id="settingsRetryButton" type="button" hidden>Повторить</button></div>
+        <form id="settingsForm" novalidate>
+          <section class="settings-tab" data-settings-tab-panel="general">
+            <div class="settings-card"><h3>Данные бизнеса</h3><p>Эта информация используется в интерфейсе и сообщениях клиентам.</p><div class="form-grid settings-form-grid">
+              <label class="form-field">Название бизнеса<input data-setting="businessName" maxlength="120" required></label>
+              <label class="form-field">Короткое название<input data-setting="shortName" maxlength="200"></label>
+              <label class="form-field form-field--full">Описание<textarea data-setting="description" maxlength="500" rows="3"></textarea></label>
+              <label class="form-field">Телефон<input data-setting="phone" type="tel" inputmode="tel" placeholder="+7 999 123-45-67"></label>
+              <label class="form-field">Email<input data-setting="email" type="email" maxlength="200" placeholder="name@example.ru"></label>
+              <label class="form-field form-field--full">Адрес<input data-setting="address" maxlength="200"></label>
+            </div></div>
+            <div class="settings-card"><h3>Региональные настройки</h3><div class="form-grid settings-form-grid">
+              <label class="form-field">Часовой пояс<select data-setting="timezone"><option value="Europe/Moscow">Europe/Moscow</option><option value="Europe/Kaliningrad">Europe/Kaliningrad</option><option value="Europe/Samara">Europe/Samara</option><option value="Asia/Yekaterinburg">Asia/Yekaterinburg</option><option value="Asia/Novosibirsk">Asia/Novosibirsk</option><option value="Asia/Vladivostok">Asia/Vladivostok</option></select></label>
+              <label class="form-field">Валюта<select data-setting="currency"><option value="RUB">Российский рубль (RUB)</option><option value="USD">Доллар США (USD)</option><option value="EUR">Евро (EUR)</option></select></label>
+              <label class="form-field">Язык<select data-setting="language"><option value="ru">Русский</option></select></label>
+            </div></div>
+          </section>
+          <section class="settings-tab" data-settings-tab-panel="booking" hidden>
+            <div class="settings-card"><h3>Правила записи</h3><p>Настройки применяются к свободным слотам и защите от пересечений сразу после сохранения.</p><div class="form-grid settings-form-grid">
+              <label class="form-field">Интервал слотов, мин<input data-setting="slotIntervalMinutes" type="number" min="5" max="120"></label>
+              <label class="form-field">Минимум до записи, мин<input data-setting="minimumBookingNoticeMinutes" type="number" min="0" max="43200"></label>
+              <label class="form-field">Горизонт записи, дней<input data-setting="maximumBookingDaysAhead" type="number" min="1" max="365"></label>
+              <label class="form-field">Отмена не позднее, часов<input data-setting="cancellationDeadlineHours" type="number" min="0" max="8760"></label>
+              <label class="form-field">Буфер до, мин<input data-setting="bufferBeforeMinutes" type="number" min="0" max="240"></label>
+              <label class="form-field">Буфер после, мин<input data-setting="bufferAfterMinutes" type="number" min="0" max="240"></label>
+            </div><div class="settings-switches">
+              <label class="checkbox-field management-switch"><input data-setting="allowSameDayBooking" type="checkbox"><span>Разрешать запись на сегодня</span></label>
+              <label class="checkbox-field management-switch"><input data-setting="allowClientCancellation" type="checkbox"><span>Разрешать клиенту отмену записи</span></label>
+            </div></div>
+          </section>
+          <section class="settings-tab" data-settings-tab-panel="notifications" hidden>
+            <div class="settings-card"><h3>Каналы уведомлений</h3><div class="settings-switches">
+              <label class="checkbox-field management-switch"><input data-setting="adminNewBookingNotifications" type="checkbox"><span>Уведомлять администратора о новой записи</span></label>
+              <label class="checkbox-field management-switch"><input data-setting="adminCancellationNotifications" type="checkbox"><span>Уведомлять администратора об отмене</span></label>
+              <label class="checkbox-field management-switch"><input data-setting="clientConfirmationNotifications" type="checkbox"><span>Отправлять клиенту подтверждение</span></label>
+              <label class="checkbox-field management-switch"><input data-setting="clientReminderNotifications" type="checkbox"><span>Отправлять клиенту напоминание</span></label>
+            </div><label class="form-field settings-reminder">За сколько часов напоминать<input data-setting="reminderHoursBefore" type="number" min="0" max="8760"></label></div>
+            <div class="settings-card"><h3>Шаблоны сообщений</h3><p>Доступны: {{clientName}}, {{serviceName}}, {{employeeName}}, {{date}}, {{time}}, {{businessName}}, {{businessPhone}}, {{businessAddress}}.</p><div class="form-grid settings-form-grid">
+              <label class="form-field form-field--full">Подтверждение<textarea data-setting="confirmationTemplate" rows="3" maxlength="1500"></textarea></label>
+              <label class="form-field form-field--full">Напоминание<textarea data-setting="reminderTemplate" rows="3" maxlength="1500"></textarea></label>
+              <label class="form-field form-field--full">Перенос<textarea data-setting="rescheduleTemplate" rows="3" maxlength="1500"></textarea></label>
+              <label class="form-field form-field--full">Отмена<textarea data-setting="cancellationTemplate" rows="3" maxlength="1500"></textarea></label>
+            </div></div>
+          </section>
+          <section class="settings-tab" data-settings-tab-panel="telegram" hidden>
+            <div class="settings-card"><h3>Подключение бота</h3><p id="telegramConnectionState">Проверяем статус…</p><button class="secondary-button" id="testTelegramButton" type="button">Проверить подключение</button></div>
+            <div class="settings-card"><h3>Настройки Telegram</h3><div class="form-grid settings-form-grid"><label class="form-field">Telegram ID администратора<input data-setting="telegramAdminId" inputmode="numeric" maxlength="20" placeholder="Например, 123456789"></label><label class="form-field form-field--full">Приветственное сообщение<textarea data-setting="telegramWelcomeMessage" rows="4" maxlength="1500"></textarea></label></div></div>
+          </section>
+          <footer class="settings-actions"><p id="settingsUnsaved" hidden>Есть несохранённые изменения.</p><button class="primary-button" id="saveSettingsButton" type="submit" disabled>Сохранить изменения</button></footer>
+        </form>
+        <section class="settings-tab settings-security" data-settings-tab-panel="security" hidden>
+          <div class="settings-card"><h3>Смена пароля</h3><form id="changePasswordForm" class="form-grid settings-form-grid" novalidate><label class="form-field">Текущий пароль<input id="currentPassword" type="password" autocomplete="current-password" required></label><label class="form-field">Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label><label class="form-field">Повторите новый пароль<input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label><div class="form-field settings-form-submit"><button class="secondary-button" type="submit">Сменить пароль</button></div></form></div>
+          <div class="settings-card settings-danger"><h3>Все устройства</h3><p>Завершает все активные сессии, включая текущую.</p><button class="danger-button" id="logoutAllButton" type="button">Выйти на всех устройствах</button><div id="logoutAllConfirmation" hidden><p>Подтвердить выход со всех устройств?</p><button class="danger-button" id="confirmLogoutAllButton" type="button">Да, завершить все сессии</button><button class="secondary-button" id="cancelLogoutAllButton" type="button">Отмена</button></div></div>
+        </section>
+      </section>
     </main>
   </div>
+
+  <dialog class="booking-dialog management-dialog settings-discard-dialog" id="settingsDiscardDialog" aria-labelledby="settingsDiscardTitle">
+    <div class="booking-form"><header class="dialog-header"><div><p class="dialog-eyebrow">Настройки</p><h2 id="settingsDiscardTitle">Не сохранённые изменения</h2><p class="dialog-description">Изменения будут потеряны, если перейти в другой раздел.</p></div></header><footer class="dialog-footer"><button class="secondary-button" id="keepSettingsButton" type="button">Остаться</button><button class="danger-button" id="discardSettingsButton" type="button">Не сохранять</button></footer></div>
+  </dialog>
+
+  <dialog class="booking-dialog management-dialog" id="clientDialog" aria-labelledby="clientDialogTitle">
+    <form class="booking-form" id="clientForm"><header class="dialog-header"><div><p class="dialog-eyebrow">CRM</p><h2 id="clientDialogTitle">Клиент</h2><p class="dialog-description" id="clientDialogSubtitle">Карточка и история посещений.</p></div><button class="dialog-close" type="button" data-client-close>&times;</button></header>
+      <div class="dialog-body"><div class="client-metrics" id="clientMetrics" hidden></div><div class="form-grid"><label class="form-field form-field--full">Имя<input id="clientRecordName" required maxlength="100"></label><label class="form-field">Телефон<input id="clientRecordPhone" required type="tel" inputmode="tel"></label><label class="form-field">Telegram<input id="clientRecordTelegram" maxlength="64" placeholder="@username"></label><label class="form-field form-field--full">Теги<input id="clientRecordTags" maxlength="240" placeholder="Например: VIP, постоянный"></label><label class="form-field form-field--full">Заметки<textarea id="clientRecordNotes" maxlength="5000" rows="4" placeholder="Видно только администраторам"></textarea></label><label class="checkbox-field management-switch"><input id="clientRecordFavorite" type="checkbox"><span>Избранный клиент</span></label></div><section class="client-merge" id="clientMergePanel" hidden><label class="form-field">Основной клиент<select id="clientMergeTarget"></select></label><button class="danger-button" id="confirmMergeClientButton" type="button">Подтвердить объединение</button></section><section class="client-history" id="clientHistory" hidden><h3>История посещений</h3><div id="clientHistoryList"></div></section></div>
+      <footer class="dialog-footer"><button class="secondary-button" id="mergeClientButton" type="button" hidden>Объединить</button><div class="dialog-footer__actions"><button class="secondary-button" type="button" data-client-close>Отмена</button><button class="primary-button" type="submit" id="saveClientButton">Сохранить</button></div></footer>
+    </form>
+  </dialog>
+
+  <dialog class="booking-dialog management-dialog" id="serviceDialog" aria-labelledby="serviceDialogTitle"><form class="booking-form" id="serviceForm"><header class="dialog-header"><div><p class="dialog-eyebrow">Каталог услуг</p><h2 id="serviceDialogTitle">Услуга</h2><p class="dialog-description">Настройте длительность, цену и доступность для записи.</p></div><button class="dialog-close" type="button" data-service-close>&times;</button></header><div class="dialog-body"><label class="form-field form-field--full">Название<input id="serviceName" required maxlength="100" placeholder="Например, Стрижка"></label><label class="form-field form-field--full">Описание<textarea id="serviceDescription" maxlength="500" placeholder="Коротко опишите услугу"></textarea></label><div class="form-grid management-form-grid"><label class="form-field">Длительность, мин<input id="serviceDuration" type="number" min="1" max="720" required></label><label class="form-field">Цена, ₽<input id="servicePrice" type="number" min="0" step="0.01" placeholder="Не указана"></label><label class="form-field">Цвет<input id="serviceColor" type="color" value="#9b5a66"></label></div><label class="checkbox-field management-switch"><input id="serviceActive" type="checkbox" checked><span>Услуга активна и доступна для новой записи</span></label></div><footer class="dialog-footer"><button class="secondary-button" type="button" data-service-close>Отмена</button><button class="primary-button" type="submit" id="saveServiceButton">Сохранить услугу</button></footer></form></dialog>
+
+  <dialog class="booking-dialog management-dialog" id="employeeDialog" aria-labelledby="employeeDialogTitle"><form class="booking-form" id="employeeForm"><header class="dialog-header"><div><p class="dialog-eyebrow">Команда</p><h2 id="employeeDialogTitle">Сотрудник</h2><p class="dialog-description">Укажите услуги и персональное рабочее расписание.</p></div><button class="dialog-close" type="button" data-employee-close>&times;</button></header><div class="dialog-body"><label class="form-field form-field--full">Имя<input id="employeeName" required maxlength="100" placeholder="Например, Анна"></label><label class="form-field form-field--full">Описание<textarea id="employeeDescription" maxlength="500" placeholder="Роль или специализация"></textarea></label><div class="form-grid management-form-grid"><label class="form-field">Цвет<input id="employeeColor" type="color" value="#9b5a66"></label><label class="form-field">Начало<input id="employeeStart" type="time" required></label><label class="form-field">Окончание<input id="employeeEnd" type="time" required></label></div><fieldset class="management-fieldset"><legend>Рабочие дни</legend><p>Выберите дни, в которые сотрудник принимает клиентов.</p><div id="employeeDays" class="checkbox-list"></div></fieldset><fieldset class="management-fieldset"><legend>Услуги сотрудника</legend><p>Только выбранные услуги будут доступны для записи к этому сотруднику.</p><div id="employeeServices" class="checkbox-list"></div></fieldset><label class="checkbox-field management-switch"><input id="employeeActive" type="checkbox" checked><span>Сотрудник активен и доступен для новой записи</span></label></div><footer class="dialog-footer"><button class="secondary-button" type="button" data-employee-close>Отмена</button><button class="primary-button" type="submit" id="saveEmployeeButton">Сохранить сотрудника</button></footer></form></dialog>
 
   <dialog class="booking-dialog" id="bookingDialog" aria-labelledby="bookingDialogTitle">
     <form class="booking-form" id="bookingForm">
@@ -169,6 +410,12 @@
       </header>
 
       <div class="dialog-body">
+        <dl class="booking-details" id="bookingDetails" hidden>
+          <div><dt>Сотрудник</dt><dd id="detailEmployee"></dd></div>
+          <div><dt>Окончание</dt><dd id="detailEndTime"></dd></div>
+          <div><dt>Длительность</dt><dd id="detailDuration"></dd></div>
+          <div><dt>Telegram</dt><dd id="detailTelegram"></dd></div>
+        </dl>
         <div class="form-grid">
           <label class="form-field form-field--full" for="clientName">
             <span>Имя клиента <b aria-hidden="true">*</b></span>
@@ -198,6 +445,7 @@
               <option value="confirmed">Подтверждена</option>
               <option value="completed">Завершена</option>
               <option value="cancelled">Отменена</option>
+              <option value="">Не указан</option>
             </select>
           </label>
 
@@ -222,6 +470,9 @@
       <footer class="dialog-footer">
         <button class="danger-button" id="deleteBookingButton" type="button" hidden>Удалить</button>
         <div class="dialog-footer__actions">
+          <button class="secondary-button" id="confirmBookingButton" type="button" hidden>Подтвердить</button>
+          <button class="secondary-button" id="completeBookingButton" type="button" hidden>Завершить</button>
+          <button class="secondary-button" id="cancelBookingButton" type="button" hidden>Отменить</button>
           <button class="secondary-button" type="button" data-dialog-close>Отмена</button>
           <button class="primary-button" type="submit">Сохранить</button>
         </div>
@@ -231,6 +482,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

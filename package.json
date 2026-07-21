@@ -1,0 +1,19 @@
+{
+  "name": "booking-desk",
+  "version": "1.0.0",
+  "description": "Booking Desk administrative dashboard",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.1.5"
+  }
+}
