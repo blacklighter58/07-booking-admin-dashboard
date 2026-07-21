@@ -70,7 +70,7 @@ export async function requestApi(path, { auth = true, timeoutMs = REQUEST_TIMEOU
 
   let response;
   try {
-    response = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers: requestHeaders, signal: controller.signal });
+    response = await fetch(`${getApiBaseUrl()}${path}`, { ...options, cache: "no-store", headers: requestHeaders, signal: controller.signal });
   } catch (error) {
     if (controller.signal.aborted) {
       const kind = signal?.aborted ? "aborted" : "timeout";

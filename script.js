@@ -9,6 +9,7 @@ import { changePassword, getSettings, logoutAll, testTelegramConnection, updateS
 import { addCalendarDays, formatCalendarTitle, getCalendarRange, minutesToTime, startOfWeek, timeToMinutes, todayIsoDate } from "./src/calendar/dateUtils.js";
 import { renderCalendarGrid } from "./src/calendar/calendarGrid.js";
 import { BOOKING_STATUS_LABELS, normalizeBookingStatus } from "./src/bookingStatuses.js";
+import { refreshBookingViews } from "./src/bookingRefresh.js";
 
 const LOGIN_ROUTE = "#/login";
 const BOOKINGS_ROUTE = "#bookings";
@@ -28,6 +29,11 @@ const VALID_SERVICES = new Set([
 ]);
 
 const statusLabels = BOOKING_STATUS_LABELS;
+const bookingDiagnosticsEnabled = import.meta.env.VITE_BOOKING_DIAGNOSTICS === "true";
+
+function logBookingDiagnostics(event, details) {
+  if (bookingDiagnosticsEnabled) console.info("Booking diagnostics", { event, ...details });
+}
 
 const elements = {
   loginPage: document.querySelector("#loginPage"),
@@ -506,7 +512,7 @@ async function loadEmployeesFromApi() {
 }
 
 async function loadBookingsFromApi() {
-  if (isLoadingBookings) return;
+  if (isLoadingBookings) return bookings;
 
   isLoadingBookings = true;
   elements.refreshButton.disabled = true;
@@ -517,8 +523,10 @@ async function loadBookingsFromApi() {
     const normalizedBookings = apiBookings.map(normalizeBooking).filter(Boolean);
 
     bookings = normalizedBookings;
+    logBookingDiagnostics("bookings-loaded", { bookingsCount: normalizedBookings.length, bookingIds: normalizedBookings.slice(0, 10).map((booking) => booking.id) });
     setDataSourceNote("API-режим · заявки загружены из Booking API");
     refreshBookings();
+    return normalizedBookings;
   } catch (error) {
     renderErrorState(error.message || "Попробуйте повторить запрос.");
   } finally {
@@ -1390,19 +1398,15 @@ function refreshBookings() {
   renderStats();
 }
 
-function replaceBooking(updatedBooking) {
-  const normalized = normalizeBooking(updatedBooking);
-  if (!normalized) return;
-  const replaceIn = (collection) => {
-    const index = collection.findIndex((booking) => String(booking.id) === String(normalized.id));
-    if (index !== -1) collection.splice(index, 1, normalized);
-  };
-  replaceIn(bookings);
-  replaceIn(calendarBookings);
-  replaceIn(calendarWeekBookings);
-  replaceIn(calendarAllBookings);
-  refreshBookings();
-  if (!elements.calendarPanel.hidden) renderCalendar();
+async function refreshAfterBookingMutation(bookingId) {
+  return refreshBookingViews({
+    bookingId,
+    loadBookings: loadBookingsFromApi,
+    loadOverview,
+    loadClients: loadClientsFromApi,
+    loadCalendar: elements.calendarPanel.hidden ? null : loadCalendarBookings,
+    onDiagnostics: (details) => logBookingDiagnostics("booking-reloaded", details),
+  });
 }
 
 async function changeBookingStatus(status) {
@@ -1415,7 +1419,7 @@ async function changeBookingStatus(status) {
       : status === "restore"
         ? await restoreBooking(editingBookingId)
         : await updateBookingStatus(editingBookingId, status);
-    replaceBooking(booking);
+    await refreshAfterBookingMutation(booking.id);
     closeBookingDialog({ force: true });
     showToast("Статус заявки обновлён");
   } catch (error) {
@@ -1435,9 +1439,7 @@ async function saveBooking(event) {
     const booking = editingBookingId === null
       ? await createBooking(formData)
       : await updateBooking(editingBookingId, formData);
-    replaceBooking(booking);
-    await loadBookingsFromApi();
-    if (!elements.calendarPanel.hidden) await loadCalendarBookings();
+    await refreshAfterBookingMutation(booking.id);
     closeBookingDialog({ force: true });
     showToast(editingBookingId === null ? "Запись создана" : "Изменения сохранены");
   } catch (error) {
@@ -1460,13 +1462,17 @@ async function deleteBooking() {
   const bookingIndex = bookings.findIndex((booking) => String(booking.id) === String(bookingId));
   if (bookingIndex === -1) return;
   try {
-    if (!String(bookingId).startsWith("local-")) await deleteBookingFromApi(bookingId);
-    bookings.splice(bookingIndex, 1);
-    calendarBookings = calendarBookings.filter((booking) => String(booking.id) !== String(bookingId));
-    calendarWeekBookings = calendarWeekBookings.filter((booking) => String(booking.id) !== String(bookingId));
-    calendarAllBookings = calendarAllBookings.filter((booking) => String(booking.id) !== String(bookingId));
-    refreshBookings();
-    if (!elements.calendarPanel.hidden) renderCalendar();
+    if (!String(bookingId).startsWith("local-")) {
+      await deleteBookingFromApi(bookingId);
+      await refreshAfterBookingMutation(bookingId);
+    } else {
+      bookings.splice(bookingIndex, 1);
+      calendarBookings = calendarBookings.filter((booking) => String(booking.id) !== String(bookingId));
+      calendarWeekBookings = calendarWeekBookings.filter((booking) => String(booking.id) !== String(bookingId));
+      calendarAllBookings = calendarAllBookings.filter((booking) => String(booking.id) !== String(bookingId));
+      refreshBookings();
+      if (!elements.calendarPanel.hidden) renderCalendar();
+    }
     closeBookingDialog({ force: true, focusTarget: elements.addButton });
     showToast("Заявка удалена");
   } catch (error) {

@@ -5,9 +5,11 @@ export async function getBookings(filters = {}) {
   ["dateFrom", "dateTo", "employeeId", "status", "search", "limit"].forEach((key) => {
     if (filters[key]) params.set(key, filters[key]);
   });
+  params.set("_t", String(Date.now()));
   const payload = await requestApi(`/api/bookings${params.size ? `?${params}` : ""}`);
-  if (!Array.isArray(payload?.bookings)) throw new Error("Booking API вернул некорректный список заявок.");
-  return payload.bookings;
+  const items = Array.isArray(payload) ? payload : Array.isArray(payload?.bookings) ? payload.bookings : Array.isArray(payload?.items) ? payload.items : null;
+  if (!items) throw new Error("Booking API вернул некорректный список заявок.");
+  return items;
 }
 
 export async function getBooking(bookingId) {
