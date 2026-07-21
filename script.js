@@ -8,6 +8,7 @@ import { clearAuthToken, getAuthToken, login } from "./src/api/authApi.js";
 import { changePassword, getSettings, logoutAll, testTelegramConnection, updateSettings } from "./src/api/settingsApi.js";
 import { addCalendarDays, formatCalendarTitle, getCalendarRange, minutesToTime, startOfWeek, timeToMinutes, todayIsoDate } from "./src/calendar/dateUtils.js";
 import { renderCalendarGrid } from "./src/calendar/calendarGrid.js";
+import { BOOKING_STATUS_LABELS, normalizeBookingStatus } from "./src/bookingStatuses.js";
 
 const LOGIN_ROUTE = "#/login";
 const BOOKINGS_ROUTE = "#bookings";
@@ -18,7 +19,6 @@ const CLIENTS_ROUTE = "#clients";
 const OVERVIEW_ROUTE = "#overview";
 const SETTINGS_ROUTE = "#settings";
 
-const VALID_STATUSES = new Set(["new", "confirmed", "in_progress", "completed", "cancelled", "no_show"]);
 const VALID_SERVICES = new Set([
   "Брови",
   "Ламинирование ресниц",
@@ -27,14 +27,7 @@ const VALID_SERVICES = new Set([
   "Комплекс"
 ]);
 
-const statusLabels = {
-  new: "Новая",
-  confirmed: "Подтверждена",
-  in_progress: "В работе",
-  completed: "Завершена",
-  cancelled: "Отменена",
-  unknown: "Не указан"
-};
+const statusLabels = BOOKING_STATUS_LABELS;
 
 const elements = {
   loginPage: document.querySelector("#loginPage"),
@@ -260,7 +253,7 @@ function normalizeBooking(rawBooking) {
   const service = typeof rawBooking.service === "string" ? rawBooking.service.trim() : "";
   const date = normalizeBookingDate(rawBooking.date);
   const time = typeof rawBooking.time === "string" ? rawBooking.time : "";
-  const status = VALID_STATUSES.has(rawBooking.status) ? rawBooking.status : null;
+  const status = normalizeBookingStatus(rawBooking.status);
   const createdAt = typeof rawBooking.createdAt === "string" && !Number.isNaN(Date.parse(rawBooking.createdAt))
     ? rawBooking.createdAt
     : "1970-01-01T00:00:00.000Z";
@@ -301,7 +294,7 @@ function normalizeBooking(rawBooking) {
 }
 
 function getBookingStatus(booking) {
-  return VALID_STATUSES.has(booking.status) ? booking.status : "unknown";
+  return normalizeBookingStatus(booking.status);
 }
 
 function sortBookings(bookingsToSort) {
@@ -563,7 +556,7 @@ function getChronologicalBookings(items) {
 
 function renderUpcomingBooking() {
   const upcoming = getChronologicalBookings(calendarWeekBookings)
-    .find((booking) => !["cancelled", "completed"].includes(booking.status));
+    .find((booking) => !["cancelled", "completed", "no_show"].includes(booking.status));
   elements.calendarUpcoming.replaceChildren();
 
   if (!upcoming) {
@@ -598,8 +591,8 @@ function renderCalendarInsights() {
   const stats = calendarWeekBookings.reduce((result, booking) => {
     result.total += 1;
     if (booking.status === "confirmed") result.confirmed += 1;
-    else if (["new", "in_progress"].includes(booking.status)) result.pending += 1;
-    else if (booking.status === "cancelled") result.cancelled += 1;
+    else if (["new", "pending", "in_progress"].includes(booking.status)) result.pending += 1;
+    else if (["cancelled", "no_show"].includes(booking.status)) result.cancelled += 1;
     return result;
   }, { total: 0, confirmed: 0, pending: 0, cancelled: 0 });
   const completed = Math.max(0, stats.total - stats.confirmed - stats.pending - stats.cancelled);

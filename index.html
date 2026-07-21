@@ -189,13 +189,15 @@
             <label class="select-field" for="statusFilter">
               <span class="visually-hidden">Фильтр по статусу</span>
               <select id="statusFilter">
-                <option value="all">Все статусы</option>
-                <option value="new">Новая</option>
-                <option value="confirmed">Подтверждена</option>
-                <option value="in_progress">В работе</option>
-                <option value="completed">Завершена</option>
-                <option value="cancelled">Отменена</option>
-                <option value="unknown">Не указан</option>
+                  <option value="all">Все статусы</option>
+                  <option value="new">Новая</option>
+                  <option value="pending">Ожидает подтверждения</option>
+                  <option value="confirmed">Подтверждена</option>
+                  <option value="in_progress">В работе</option>
+                  <option value="completed">Завершена</option>
+                  <option value="cancelled">Отменена</option>
+                  <option value="no_show">Не пришёл</option>
+                  <option value="unknown">Не указан</option>
               </select>
             </label>
             <label class="select-field" for="employeeFilter">
@@ -442,9 +444,12 @@
             <span>Статус <b aria-hidden="true">*</b></span>
             <select id="bookingStatus" name="status" required>
               <option value="new">Новая</option>
+              <option value="pending">Ожидает подтверждения</option>
               <option value="confirmed">Подтверждена</option>
+              <option value="in_progress">В работе</option>
               <option value="completed">Завершена</option>
               <option value="cancelled">Отменена</option>
+              <option value="no_show">Не пришёл</option>
               <option value="">Не указан</option>
             </select>
           </label>

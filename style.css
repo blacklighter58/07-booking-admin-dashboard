@@ -1467,6 +1467,12 @@ tbody tr:hover {
   background: var(--new-soft);
 }
 
+.status-badge--pending,
+.status-badge--in_progress {
+  color: #a36600;
+  background: #fff4dd;
+}
+
 .status-badge--confirmed {
   color: var(--confirmed);
   background: var(--confirmed-soft);
@@ -1480,6 +1486,11 @@ tbody tr:hover {
 .status-badge--cancelled {
   color: var(--cancelled);
   background: var(--cancelled-soft);
+}
+
+.status-badge--no_show {
+  color: #7c4b55;
+  background: #f7eaed;
 }
 
 .status-badge--unknown {
