@@ -217,8 +217,10 @@ function isDemoMode() { return getAuthRole() === "demo"; }
 function syncDemoMode() {
   const demo = isDemoMode();
   elements.demoBanner.hidden = !demo;
-  [elements.servicesNavLink, elements.employeesNavLink, elements.clientsNavLink, elements.settingsNavLink].forEach((link) => { link.hidden = demo; });
-  if (demo && [SERVICES_ROUTE, EMPLOYEES_ROUTE, CLIENTS_ROUTE, SETTINGS_ROUTE].includes(window.location.hash)) window.location.replace(BOOKINGS_ROUTE);
+  [elements.servicesNavLink, elements.employeesNavLink, elements.clientsNavLink].forEach((link) => { link.hidden = false; });
+  elements.settingsNavLink.hidden = demo;
+  [elements.addServiceButton, elements.addEmployeeButton].forEach((button) => { button.hidden = demo; });
+  if (demo && window.location.hash === SETTINGS_ROUTE) window.location.replace(BOOKINGS_ROUTE);
 }
 let settingsInitialState = "";
 let isSavingSettings = false;
@@ -637,7 +639,7 @@ function showDashboardSection(section) {
   elements.addButton.hidden = isSettings;
   elements.addButton.innerHTML = '<span aria-hidden="true">+</span>Добавить заявку';
   elements.addButton.setAttribute("aria-label", "Добавить заявку");
-  elements.addClientButton.hidden = !isClients;
+  elements.addClientButton.hidden = !isClients || isDemoMode();
   [[elements.overviewNavLink, isOverview], [elements.bookingsNavLink, isBookings], [elements.calendarNavLink, isCalendar], [elements.servicesNavLink, isServices], [elements.employeesNavLink, isEmployees], [elements.clientsNavLink, isClients], [elements.settingsNavLink, isSettings]].forEach(([link, active]) => {
     link.classList.toggle("nav-link--active", active);
     link.toggleAttribute("aria-current", active);
@@ -851,6 +853,7 @@ async function loadOverview() { if (overviewRequestController) overviewRequestCo
 function createCell(value) { const cell = document.createElement("td"); cell.textContent = value; return cell; }
 function createManagementActions(id, active) {
   const cell = document.createElement("td"); cell.className = "management-actions";
+  if (isDemoMode()) { cell.textContent = "Только просмотр"; return cell; }
   [["edit", "Редактировать"], ["toggle", active ? "Отключить" : "Включить"], ["delete", "Удалить"]].forEach(([action, label]) => {
     const button = document.createElement("button"); button.type = "button"; button.dataset.action = action; button.dataset.id = id; button.textContent = label; cell.append(button);
   }); return cell;
@@ -957,7 +960,7 @@ async function saveClient(event) {
 }
 async function toggleMergeClient() { if (!editingClientId) return; if (!elements.clientMergePanel.hidden) { elements.clientMergePanel.hidden = true; return; } const all = await getClients({ page: 1, limit: 100, sort: "name", order: "asc" }); clients = all.clients; populateMergeTargets(editingClientId); elements.clientMergePanel.hidden = false; }
 async function confirmClientMerge() { const targetClientId = elements.clientMergeTarget.value; if (!targetClientId) { showToast("Выберите основного клиента"); return; } if (!confirm("Объединить клиентов? Все записи перейдут к основному клиенту.")) return; elements.confirmMergeClientButton.disabled = true; try { await mergeClient(editingClientId, targetClientId); elements.clientDialog.close(); await loadClientsFromApi(); showToast("Клиенты объединены, история сохранена"); } catch (error) { showToast(error.message || "Не удалось объединить клиентов"); } finally { elements.confirmMergeClientButton.disabled = false; } }
-async function handleClientAction(event) { const button = event.target.closest("button[data-client-id]"); if (button) await openClientDialog(button.dataset.clientId); }
+async function handleClientAction(event) { const button = event.target.closest("button[data-client-id]"); if (!button) return; if (isDemoMode()) { showToast("Карточки клиентов в демо доступны только в списке."); return; } await openClientDialog(button.dataset.clientId); }
 async function openClientHistoryBooking(event) { const button = event.target.closest("button[data-booking-id]"); if (!button) return; try { const booking = normalizeBooking(await getBooking(button.dataset.bookingId)).booking; if (!booking) throw new Error("Запись содержит неполные данные."); elements.clientDialog.close(); window.location.hash = BOOKINGS_ROUTE; await openExistingBooking(booking, elements.addButton); } catch (error) { showToast(error.message || "Запись не найдена"); } }
 
 function formatResultsCount(count) {
