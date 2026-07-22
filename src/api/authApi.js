@@ -1,4 +1,5 @@
 const TOKEN_STORAGE_KEY = "booking-desk-admin-token";
+const ROLE_STORAGE_KEY = "booking-desk-role";
 const REQUEST_TIMEOUT_MS = 9000;
 let unauthorizedNotified = false;
 
@@ -36,11 +37,11 @@ function getErrorData(payload, fallback) {
   return { message: payload?.message || fallback, code: "REQUEST_FAILED", details: payload?.fields ?? null };
 }
 
-function notifyUnauthorized() {
+function notifyUnauthorized(code = "") {
   if (unauthorizedNotified || window.location.hash === "#/login") return;
   unauthorizedNotified = true;
   clearAuthToken();
-  document.dispatchEvent(new CustomEvent("auth:unauthorized"));
+  document.dispatchEvent(new CustomEvent("auth:unauthorized", { detail: { code } }));
 }
 
 export function getAuthToken() {
@@ -52,8 +53,18 @@ export function setAuthToken(token) {
   sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
+export function getAuthRole() {
+  return sessionStorage.getItem(ROLE_STORAGE_KEY) || "admin";
+}
+
+function setAuthSession(token, role) {
+  setAuthToken(token);
+  sessionStorage.setItem(ROLE_STORAGE_KEY, role === "demo" ? "demo" : "admin");
+}
+
 export function clearAuthToken() {
   sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(ROLE_STORAGE_KEY);
 }
 
 export async function requestApi(path, { auth = true, timeoutMs = REQUEST_TIMEOUT_MS, signal, headers, ...options } = {}) {
@@ -94,8 +105,8 @@ export async function requestApi(path, { auth = true, timeoutMs = REQUEST_TIMEOU
   }
 
   if (!response.ok) {
-    if (auth && response.status === 401) notifyUnauthorized();
     const error = getErrorData(payload, `Ошибка Booking API: ${response.status}.`);
+    if (auth && response.status === 401) notifyUnauthorized(error.code);
     throw new ApiRequestError(error.message, { status: response.status, code: error.code, details: error.details, kind: "http" });
   }
   return payload;
@@ -109,5 +120,13 @@ export async function login(loginValue, password) {
     body: JSON.stringify({ login: loginValue, password }),
   });
   if (!payload?.token) throw new ApiRequestError("Booking API не вернул токен авторизации.", { kind: "response", code: "TOKEN_MISSING" });
-  setAuthToken(payload.token);
+  setAuthSession(payload.token, payload.role);
+  return payload;
+}
+
+export async function loginDemo() {
+  const payload = await requestApi("/api/auth/demo", { auth: false, method: "POST" });
+  if (!payload?.token || payload.role !== "demo") throw new ApiRequestError("Booking API не вернул токен демосессии.", { kind: "response", code: "DEMO_TOKEN_MISSING" });
+  setAuthSession(payload.token, payload.role);
+  return payload;
 }

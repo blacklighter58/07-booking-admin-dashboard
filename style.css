@@ -548,6 +548,13 @@ h1 {
 .bookings-panel .row-action { color: #66758a; }
 .bookings-panel .row-action:hover { border-color: #d9e0e8; color: var(--accent); background: #fff; }
 
+.demo-login-button { width: 100%; margin-top: 12px; min-height: 42px; border: 1px solid #cfd8e5; border-radius: 8px; color: #30435c; background: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+.demo-login-button:hover { background: #f5f8fc; border-color: #aebdce; }
+.demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 20px; padding: 12px 16px; border: 1px solid #cbd8e8; border-radius: 9px; color: #273c56; background: #f4f8fd; }
+.demo-banner strong, .demo-banner span { display: block; }
+.demo-banner span { margin-top: 3px; color: #607287; font-size: 13px; }
+@media (max-width: 600px) { .demo-banner { align-items: stretch; flex-direction: column; } .demo-banner .secondary-button { width: 100%; } }
+
 .bookings-overview {
   display: grid;
   grid-template-columns: 1.05fr 1.15fr 1.2fr;

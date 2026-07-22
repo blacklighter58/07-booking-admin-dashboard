@@ -1,10 +1,10 @@
-import { cancelBooking, createBooking, getBooking, getBookings, restoreBooking, updateBooking, updateBookingStatus } from "./src/api/bookingsApi.js";
+import { cancelBooking, createBooking, deleteBookingFromApi, getBooking, getBookings, restoreBooking, updateBooking, updateBookingStatus } from "./src/api/bookingsApi.js";
 import { getAvailableSlots } from "./src/api/availabilityApi.js";
 import { createEmployee, deleteEmployeeFromApi, getEmployees, updateEmployee, updateEmployeeServices } from "./src/api/employeesApi.js";
 import { createService, deleteServiceFromApi, getServices, updateService } from "./src/api/servicesApi.js";
 import { createClient, getClient, getClients, mergeClient, updateClient } from "./src/api/clientsApi.js";
 import { getDashboardOverview } from "./src/api/overviewApi.js";
-import { clearAuthToken, getAuthToken, login } from "./src/api/authApi.js";
+import { clearAuthToken, getAuthRole, getAuthToken, login, loginDemo, requestApi } from "./src/api/authApi.js";
 import { changePassword, getSettings, logoutAll, testTelegramConnection, updateSettings } from "./src/api/settingsApi.js";
 import { addCalendarDays, formatCalendarTitle, getCalendarRange, minutesToTime, startOfWeek, timeToMinutes, todayIsoDate } from "./src/calendar/dateUtils.js";
 import { renderCalendarGrid } from "./src/calendar/calendarGrid.js";
@@ -39,7 +39,9 @@ const elements = {
   loginSubmit: document.querySelector("#loginSubmit"),
   loginSubmitLabel: document.querySelector(".login-submit__label"),
   loginSubmitLoader: document.querySelector(".login-submit__loader"),
+  demoLoginButton: document.querySelector("#demoLoginButton"),
   logoutButton: document.querySelector("#logoutButton"),
+  demoBanner: document.querySelector("#demoBanner"), resetDemoButton: document.querySelector("#resetDemoButton"),
   tableBody: document.querySelector("#bookingsTableBody"),
   search: document.querySelector("#bookingSearch"),
   statusFilter: document.querySelector("#statusFilter"),
@@ -209,6 +211,15 @@ let dashboardStarted = false;
 let overviewPeriod = "today";
 let overviewRequestController = null;
 let currentSettings = { businessName: "Beauty-студия", currency: "RUB", language: "ru", timezone: "Europe/Moscow" };
+
+function isDemoMode() { return getAuthRole() === "demo"; }
+
+function syncDemoMode() {
+  const demo = isDemoMode();
+  elements.demoBanner.hidden = !demo;
+  [elements.servicesNavLink, elements.employeesNavLink, elements.clientsNavLink, elements.settingsNavLink].forEach((link) => { link.hidden = demo; });
+  if (demo && [SERVICES_ROUTE, EMPLOYEES_ROUTE, CLIENTS_ROUTE, SETTINGS_ROUTE].includes(window.location.hash)) window.location.replace(BOOKINGS_ROUTE);
+}
 let settingsInitialState = "";
 let isSavingSettings = false;
 let pendingSettingsRoute = null;
@@ -1217,10 +1228,11 @@ async function loadAvailableTimes(selectedTime = "") {
   }
   try {
     const { slots } = await getAvailableSlots({ serviceId, employeeId, date });
-    elements.bookingTime.replaceChildren(new Option(slots.length ? "Выберите время" : "Нет свободного времени", ""));
-    slots.forEach((slot) => elements.bookingTime.add(new Option(slot, slot)));
-    if (selectedTime && slots.includes(selectedTime)) elements.bookingTime.value = selectedTime;
-    elements.bookingTime.disabled = slots.length === 0;
+    const selectableSlots = selectedTime && !slots.includes(selectedTime) ? [selectedTime, ...slots] : slots;
+    elements.bookingTime.replaceChildren(new Option(selectableSlots.length ? "Выберите время" : "Нет свободного времени", ""));
+    selectableSlots.forEach((slot) => elements.bookingTime.add(new Option(slot, slot)));
+    if (selectedTime && selectableSlots.includes(selectedTime)) elements.bookingTime.value = selectedTime;
+    elements.bookingTime.disabled = selectableSlots.length === 0;
   } catch (error) {
     elements.bookingTime.replaceChildren(new Option("Время недоступно", ""));
     showToast(error.message || "Не удалось получить свободное время");
@@ -1255,7 +1267,7 @@ async function openExistingBooking(booking, trigger = document.activeElement) {
   elements.dialogTitle.textContent = `Заявка #${booking.id}`;
   elements.dialogId.textContent = `ID заявки: ${booking.id} · Создана ${formatCreatedAt(booking.createdAt)}`;
   elements.dialogId.hidden = false;
-  elements.deleteButton.hidden = true;
+  elements.deleteButton.hidden = !isDemoMode();
   elements.confirmBookingButton.hidden = booking.status === "confirmed";
   elements.completeBookingButton.hidden = booking.status === "completed";
   elements.cancelBookingButton.hidden = booking.status === "cancelled";
@@ -1449,11 +1461,12 @@ function showLoginPage() {
 function startDashboard() {
   elements.loginPage.hidden = true;
   elements.dashboardPage.hidden = false;
+  syncDemoMode();
 
   if (dashboardStarted) return;
   dashboardStarted = true;
   displayCurrentDate();
-  loadDashboardSettings();
+  if (!isDemoMode()) loadDashboardSettings();
   renderStats();
   loadEmployeesFromApi();
   loadServicesFromApi();
@@ -1469,6 +1482,7 @@ function renderRoute() {
 
   if (![OVERVIEW_ROUTE, BOOKINGS_ROUTE, CALENDAR_ROUTE, SERVICES_ROUTE, EMPLOYEES_ROUTE, CLIENTS_ROUTE, SETTINGS_ROUTE, "#/dashboard"].includes(window.location.hash)) window.location.replace(OVERVIEW_ROUTE);
   startDashboard();
+  syncDemoMode();
   const currentRoute = window.location.hash;
   showDashboardSection(currentRoute === OVERVIEW_ROUTE || currentRoute === "#/dashboard" ? "overview" : currentRoute === CALENDAR_ROUTE ? "calendar" : currentRoute === SERVICES_ROUTE ? "services" : currentRoute === EMPLOYEES_ROUTE ? "employees" : currentRoute === CLIENTS_ROUTE ? "clients" : currentRoute === SETTINGS_ROUTE ? "settings" : "bookings");
 }
@@ -1497,8 +1511,36 @@ async function handleLogin(event) {
   }
 }
 
+async function handleDemoLogin() {
+  elements.demoLoginButton.disabled = true;
+  showLoginError();
+  try {
+    await loginDemo();
+    window.location.hash = BOOKINGS_ROUTE;
+  } catch (error) {
+    showLoginError(error.message || "Не удалось открыть интерактивное демо.");
+  } finally {
+    elements.demoLoginButton.disabled = false;
+  }
+}
+
+async function resetDemoData() {
+  if (!isDemoMode() || !confirm("Сбросить текущие демоданные? Изменения этой сессии будут удалены.")) return;
+  elements.resetDemoButton.disabled = true;
+  try {
+    await requestApi("/api/demo/reset", { method: "POST" });
+    await Promise.all([loadEmployeesFromApi(), loadServicesFromApi(), loadBookingsFromApi(), loadOverview()]);
+    showToast("Демоданные восстановлены.");
+  } catch (error) {
+    showToast(error.message || "Не удалось сбросить демоданные.");
+  } finally {
+    elements.resetDemoButton.disabled = false;
+  }
+}
+
 function logout() {
   clearAuthToken();
+  dashboardStarted = false;
   window.location.hash = LOGIN_ROUTE;
 }
 
@@ -1604,9 +1646,11 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && elements.sidebar.classList.contains("is-open")) closeSidebar();
 });
 elements.loginForm.addEventListener("submit", handleLogin);
+elements.demoLoginButton.addEventListener("click", handleDemoLogin);
 elements.logoutButton.addEventListener("click", logout);
-document.addEventListener("auth:unauthorized", () => {
-  showLoginError("Сессия завершилась. Войдите снова.");
+elements.resetDemoButton.addEventListener("click", resetDemoData);
+document.addEventListener("auth:unauthorized", (event) => {
+  showLoginError(event.detail?.code === "DEMO_SESSION_EXPIRED" ? "Демосессия завершилась. Откройте демо снова." : "Сессия завершилась. Войдите снова.");
   window.location.hash = LOGIN_ROUTE;
 });
 window.addEventListener("hashchange", () => {
