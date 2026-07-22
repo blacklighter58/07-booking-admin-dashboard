@@ -331,6 +331,13 @@ h1 {
   line-height: 1.4;
 }
 
+.last-refresh {
+  display: block;
+  margin-top: 3px;
+  color: #858c95;
+  font-size: 11px;
+}
+
 .page-header__actions {
   display: flex;
   align-items: center;
@@ -509,6 +516,22 @@ h1 {
 .bookings-panel .select-field select { min-width: 138px; }
 .bookings-panel .restore-button { color: #66758a; font-weight: 650; }
 .bookings-panel .restore-button:hover { border-color: #bfc8d5; color: #2a3444; background: #fbfcfe; }
+
+.active-filters,
+.booking-warning {
+  margin: 0 20px 12px;
+  font-size: 12px;
+}
+
+.active-filters { color: #617084; }
+
+.booking-warning {
+  padding: 9px 11px;
+  border: 1px solid #f0d8a9;
+  border-radius: 7px;
+  color: #76521d;
+  background: #fff8e9;
+}
 
 .bookings-panel table { min-width: 960px; }
 .bookings-panel th { height: 44px; color: #7b899b; background: #f8f9fb; font-size: 10px; letter-spacing: .055em; }

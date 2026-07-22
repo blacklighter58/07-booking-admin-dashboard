@@ -98,6 +98,7 @@
           <h1>Заявки</h1>
           <p class="page-header__subtitle">Управление записями клиентов</p>
           <p class="demo-note" id="dataSourceNote">API-режим <span aria-hidden="true">·</span> заявки загружаются из Booking API</p>
+          <time class="last-refresh" id="lastRefresh" hidden aria-live="polite"></time>
         </div>
         <div class="page-header__actions">
           <time class="current-date" id="currentDate" aria-label="Текущая дата"></time>
@@ -206,6 +207,19 @@
                 <option value="all">Все сотрудники</option>
               </select>
             </label>
+            <label class="select-field" for="serviceFilter">
+              <span class="visually-hidden">Фильтр по услуге</span>
+              <select id="serviceFilter"><option value="all">Все услуги</option></select>
+            </label>
+            <label class="select-field" for="periodFilter">
+              <span class="visually-hidden">Фильтр по периоду</span>
+              <select id="periodFilter">
+                <option value="all">Все даты</option>
+                <option value="today">Сегодня</option>
+                <option value="upcoming">Предстоящие</option>
+                <option value="past">Прошедшие</option>
+              </select>
+            </label>
             <label class="select-field" for="bookingSort">
               <span class="visually-hidden">Сортировка заявок</span>
               <select id="bookingSort">
@@ -219,6 +233,9 @@
             <button class="restore-button" id="refreshBookingsButton" type="button">Обновить</button>
           </div>
         </div>
+
+        <p class="active-filters" id="activeFilters" aria-live="polite" hidden></p>
+        <p class="booking-warning" id="bookingWarning" role="status" hidden></p>
 
         <div class="table-scroll" tabindex="0" aria-label="Таблица заявок, доступна горизонтальная прокрутка">
           <table>

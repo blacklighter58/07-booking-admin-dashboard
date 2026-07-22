@@ -10,7 +10,8 @@ import { addCalendarDays, formatCalendarTitle, getCalendarRange, minutesToTime, 
 import { renderCalendarGrid } from "./src/calendar/calendarGrid.js";
 import { BOOKING_STATUS_LABELS, normalizeBookingStatus } from "./src/bookingStatuses.js";
 import { refreshBookingViews } from "./src/bookingRefresh.js";
-import { normalizeBookingTime } from "./src/bookingTime.js";
+import { filterBookings, hasActiveBookingFilters, normalizeBooking, normalizeBookings, resetBookingFilters, sortBookings } from "./src/bookingRecords.js";
+import { updateBookingStatusSafely } from "./src/bookingStatusUpdate.js";
 
 const LOGIN_ROUTE = "#/login";
 const BOOKINGS_ROUTE = "#bookings";
@@ -20,14 +21,6 @@ const EMPLOYEES_ROUTE = "#employees";
 const CLIENTS_ROUTE = "#clients";
 const OVERVIEW_ROUTE = "#overview";
 const SETTINGS_ROUTE = "#settings";
-
-const VALID_SERVICES = new Set([
-  "Брови",
-  "Ламинирование ресниц",
-  "Дневной макияж",
-  "Вечерний макияж",
-  "Комплекс"
-]);
 
 const statusLabels = BOOKING_STATUS_LABELS;
 const bookingDiagnosticsEnabled = import.meta.env.VITE_BOOKING_DIAGNOSTICS === "true";
@@ -51,6 +44,11 @@ const elements = {
   search: document.querySelector("#bookingSearch"),
   statusFilter: document.querySelector("#statusFilter"),
   employeeFilter: document.querySelector("#employeeFilter"),
+  serviceFilter: document.querySelector("#serviceFilter"),
+  periodFilter: document.querySelector("#periodFilter"),
+  activeFilters: document.querySelector("#activeFilters"),
+  bookingWarning: document.querySelector("#bookingWarning"),
+  lastRefresh: document.querySelector("#lastRefresh"),
   calendarEmployeeFilter: document.querySelector("#calendarEmployeeFilter"),
   sort: document.querySelector("#bookingSort"),
   resetButton: document.querySelector("#resetFilters"),
@@ -202,6 +200,7 @@ let calendarView = "day";
 let calendarDate = todayIsoDate();
 let isLoadingCalendar = false;
 let isLoadingBookings = false;
+let lastBookingsRefreshAt = null;
 let initialFormState = "";
 let isFormDirty = false;
 let dialogTrigger = null;
@@ -238,108 +237,22 @@ function formatBookingDate(date) {
 }
 
 function formatCreatedAt(createdAt) {
+  if (!createdAt || Number.isNaN(Date.parse(createdAt))) return "Не указана";
   return new Intl.DateTimeFormat(currentSettings.language || "ru", { day: "numeric", month: "long", year: "numeric", timeZone: currentSettings.timezone || "Europe/Moscow" }).format(new Date(createdAt));
-}
-
-function normalizeBookingDate(rawDate) {
-  if (typeof rawDate !== "string") return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return rawDate;
-
-  const match = rawDate.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
-}
-
-function normalizeBooking(rawBooking) {
-  if (!rawBooking || typeof rawBooking !== "object") return null;
-
-  const id = typeof rawBooking.id === "string" || typeof rawBooking.id === "number"
-    ? String(rawBooking.id)
-    : "";
-  const clientName = typeof rawBooking.clientName === "string" ? rawBooking.clientName.trim() : "";
-  const phone = typeof rawBooking.phone === "string" ? rawBooking.phone.trim() : "";
-  const service = typeof rawBooking.service === "string" ? rawBooking.service.trim() : "";
-  const date = normalizeBookingDate(rawBooking.date);
-  const time = normalizeBookingTime(rawBooking.time);
-  const status = normalizeBookingStatus(rawBooking.status);
-  const createdAt = typeof rawBooking.createdAt === "string" && !Number.isNaN(Date.parse(rawBooking.createdAt))
-    ? rawBooking.createdAt
-    : "1970-01-01T00:00:00.000Z";
-
-  if (
-    !id ||
-    !clientName ||
-    !phone ||
-    service.length < 2 ||
-    !date ||
-    !/^\d{2}:\d{2}$/.test(time)
-  ) {
-    return null;
-  }
-
-  return {
-    id,
-    clientName,
-    phone,
-    service,
-    serviceId: typeof rawBooking.serviceId === "string" ? rawBooking.serviceId : null,
-    durationMinutes: Number.isInteger(rawBooking.durationMinutes) && rawBooking.durationMinutes > 0 ? rawBooking.durationMinutes : null,
-    serviceColor: typeof rawBooking.serviceColor === "string" ? rawBooking.serviceColor : null,
-    employeeId: typeof rawBooking.employeeId === "string" ? rawBooking.employeeId : null,
-    employeeName: typeof rawBooking.employeeName === "string" && rawBooking.employeeName.trim() ? rawBooking.employeeName.trim() : null,
-    telegramUserId: typeof rawBooking.telegramUserId === "string" ? rawBooking.telegramUserId : null,
-    telegramUsername: typeof rawBooking.telegramUsername === "string" ? rawBooking.telegramUsername : null,
-    source: typeof rawBooking.source === "string" ? rawBooking.source : null,
-    cancelledAt: typeof rawBooking.cancelledAt === "string" ? rawBooking.cancelledAt : null,
-    cancellationReason: typeof rawBooking.cancellationReason === "string" ? rawBooking.cancellationReason : null,
-    date,
-    time,
-    status,
-    comment: typeof rawBooking.comment === "string" ? rawBooking.comment.slice(0, 300) : "",
-    createdAt,
-    updatedAt: typeof rawBooking.updatedAt === "string" ? rawBooking.updatedAt : null,
-  };
 }
 
 function getBookingStatus(booking) {
   return normalizeBookingStatus(booking.status);
 }
 
-function sortBookings(bookingsToSort) {
-  return [...bookingsToSort].sort((firstBooking, secondBooking) => {
-    if (elements.sort.value === "date-asc") {
-      return `${firstBooking.date}T${firstBooking.time}`.localeCompare(`${secondBooking.date}T${secondBooking.time}`);
-    }
-    if (elements.sort.value === "date-desc") {
-      return `${secondBooking.date}T${secondBooking.time}`.localeCompare(`${firstBooking.date}T${firstBooking.time}`);
-    }
-    if (elements.sort.value === "name-asc") {
-      return firstBooking.clientName.localeCompare(secondBooking.clientName, "ru-RU");
-    }
-    return Date.parse(secondBooking.createdAt) - Date.parse(firstBooking.createdAt)
-      || String(secondBooking.id).localeCompare(String(firstBooking.id));
-  });
-}
-
 function getFilteredBookings() {
-  const query = elements.search.value.trim().toLocaleLowerCase("ru-RU");
-  const status = elements.statusFilter.value;
-  const employeeId = elements.employeeFilter.value;
-  const queryDigits = query.replace(/\D/g, "");
-
-  const filteredBookings = bookings.filter((booking) => {
-    const searchableText = [booking.clientName, booking.phone, booking.service]
-      .join(" ")
-      .toLocaleLowerCase("ru-RU");
-    const phoneDigits = booking.phone.replace(/\D/g, "");
-    const matchesText = !query || searchableText.includes(query);
-    const matchesPhone = queryDigits.length >= 3 && phoneDigits.includes(queryDigits);
-    const matchesStatus = status === "all" || getBookingStatus(booking) === status;
-    const matchesEmployee = employeeId === "all" || booking.employeeId === employeeId;
-
-    return (matchesText || matchesPhone) && matchesStatus && matchesEmployee;
-  });
-
-  return sortBookings(filteredBookings);
+  return sortBookings(filterBookings(bookings, {
+    query: elements.search.value,
+    status: elements.statusFilter.value,
+    employeeId: elements.employeeFilter.value,
+    serviceId: elements.serviceFilter.value,
+    period: elements.periodFilter.value,
+  }), elements.sort.value);
 }
 
 function createBookingRow(booking) {
@@ -431,11 +344,12 @@ function createBookingRow(booking) {
 function renderEmptyState() {
   const row = document.createElement("tr");
   row.className = "empty-state";
+  const hasFilters = hasActiveBookingFilters({ query: elements.search.value, status: elements.statusFilter.value, employeeId: elements.employeeFilter.value, serviceId: elements.serviceFilter.value, period: elements.periodFilter.value });
   row.innerHTML = `
-    <td colspan="7">
+    <td colspan="8">
       <span class="empty-state__icon" aria-hidden="true">⌕</span>
-      <strong>Заявки не найдены</strong>
-      <p>Измените запрос или сбросьте выбранные фильтры.</p>
+      <strong>${hasFilters ? "По выбранным условиям записи не найдены" : "Записей пока нет"}</strong>
+      <p>${hasFilters ? "Измените запрос или сбросьте выбранные фильтры." : "Новые записи появятся здесь после создания."}</p>
     </td>
   `;
   elements.tableBody.append(row);
@@ -446,7 +360,7 @@ function createTableState(type, title, message, actionLabel = "") {
   row.className = `table-state table-state--${type}`;
 
   const cell = document.createElement("td");
-  cell.colSpan = 7;
+  cell.colSpan = 8;
   const icon = document.createElement("span");
   icon.className = "table-state__icon";
   icon.setAttribute("aria-hidden", "true");
@@ -502,6 +416,16 @@ function populateEmployeeFilter() {
   });
 }
 
+function populateServiceFilter() {
+  const selectedServiceId = elements.serviceFilter.value;
+  const options = [new Option("Все услуги", "all")];
+  services.forEach((service) => {
+    if (typeof service?.id === "string" && typeof service?.name === "string") options.push(new Option(service.name, service.id));
+  });
+  elements.serviceFilter.replaceChildren(...options);
+  elements.serviceFilter.value = options.some((option) => option.value === selectedServiceId) ? selectedServiceId : "all";
+}
+
 async function loadEmployeesFromApi() {
   try {
     employees = await getEmployees();
@@ -521,9 +445,21 @@ async function loadBookingsFromApi() {
 
   try {
     const apiBookings = await getBookings();
-    const normalizedBookings = apiBookings.map(normalizeBooking).filter(Boolean);
+    const invalidBookings = [];
+    const normalizedBookings = normalizeBookings(apiBookings, {
+      onInvalid: (entry) => invalidBookings.push(entry),
+    });
 
     bookings = normalizedBookings;
+    lastBookingsRefreshAt = new Date();
+    if (import.meta.env.DEV && invalidBookings.length) console.warn("Booking API returned invalid bookings", invalidBookings);
+    elements.bookingWarning.hidden = invalidBookings.length === 0;
+    elements.bookingWarning.textContent = invalidBookings.length
+      ? `Часть записей (${invalidBookings.length}) не удалось обработать. Обновите страницу или обратитесь к администратору API.`
+      : "";
+    elements.lastRefresh.dateTime = lastBookingsRefreshAt.toISOString();
+    elements.lastRefresh.textContent = `Обновлено: ${new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(lastBookingsRefreshAt)}`;
+    elements.lastRefresh.hidden = false;
     logBookingDiagnostics("bookings-loaded", { bookingsCount: normalizedBookings.length, bookingIds: normalizedBookings.slice(0, 10).map((booking) => booking.id) });
     setDataSourceNote("API-режим · заявки загружены из Booking API");
     refreshBookings();
@@ -641,9 +577,9 @@ async function loadCalendarBookings() {
       : getBookings({ dateFrom: weekRange.dateFrom, dateTo: weekRange.dateTo, ...filters });
     const allRequest = getBookings({ limit: 100 });
     const [apiBookings, apiWeekBookings, apiAllBookings] = await Promise.all([calendarRequest, weekRequest, allRequest]);
-    calendarBookings = apiBookings.map(normalizeBooking).filter(Boolean);
-    calendarWeekBookings = apiWeekBookings.map(normalizeBooking).filter(Boolean);
-    calendarAllBookings = apiAllBookings.map(normalizeBooking).filter(Boolean);
+    calendarBookings = normalizeBookings(apiBookings);
+    calendarWeekBookings = normalizeBookings(apiWeekBookings);
+    calendarAllBookings = normalizeBookings(apiAllBookings);
     elements.calendarState.hidden = false;
     elements.calendarState.textContent = calendarBookings.length
       ? `Записей в выбранном периоде: ${calendarBookings.length}`
@@ -878,7 +814,7 @@ function renderOverview(data) {
   elements.overviewCompletedRevenue.textContent = formatCurrency(summary.completedRevenue);
   elements.overviewAttention.replaceChildren();
   [["Ожидают подтверждения", attention.pendingBookings, "#bookings"], ["Без сотрудника", attention.unassignedBookings, "#bookings"], ["Отменены сегодня", attention.cancelledToday, "#bookings"], ["Начнутся в течение часа", attention.startingSoon, "#calendar"], ["Свободные окна сегодня", attention.todayFreeSlots, "#calendar"]].forEach(([label, value, route]) => { const item = overviewItem(elements.overviewAttention, label, String(value)); item.addEventListener("click", () => { window.location.hash = route; }); });
-  elements.overviewUpcoming.replaceChildren(); upcomingBookings.forEach((booking) => { const item = overviewTextItem(elements.overviewUpcoming, [["span", `${booking.date} · ${booking.time}`], ["strong", `${booking.clientName} · ${booking.service}`], ["small", `${booking.employeeName || "Сотрудник не назначен"} · ${statusLabels[booking.status] || booking.status}`]], !booking.employeeId ? "is-warning" : ""); item.addEventListener("click", async () => { try { const record = await getBooking(booking.id); await openExistingBooking(normalizeBooking(record), elements.addButton); } catch (error) { showToast(error.message || "Не удалось открыть запись"); } }); });
+  elements.overviewUpcoming.replaceChildren(); upcomingBookings.forEach((booking) => { const item = overviewTextItem(elements.overviewUpcoming, [["span", `${booking.date} · ${booking.time}`], ["strong", `${booking.clientName} · ${booking.service}`], ["small", `${booking.employeeName || "Сотрудник не назначен"} · ${statusLabels[booking.status] || booking.status}`]], !booking.employeeId ? "is-warning" : ""); item.addEventListener("click", async () => { try { const record = normalizeBooking(await getBooking(booking.id)).booking; if (!record) throw new Error("Запись содержит неполные данные."); await openExistingBooking(record, elements.addButton); } catch (error) { showToast(error.message || "Не удалось открыть запись"); } }); });
   if (!upcomingBookings.length) elements.overviewUpcoming.textContent = "Ближайших записей нет.";
   elements.overviewChart.replaceChildren(); const max = Math.max(1, ...bookingDynamics.map((item) => item.created)); bookingDynamics.forEach((item) => { const bar = document.createElement("button"); bar.type = "button"; bar.className = "overview-bar"; bar.style.height = `${Math.max(8, (item.created / max) * 100)}%`; bar.title = `${item.date}: ${item.created} записей`; const label = document.createElement("span"); label.textContent = item.date.slice(5); bar.append(label); elements.overviewChart.append(bar); });
   const renderMetricList = (container, items, mapper) => { container.replaceChildren(); items.forEach((item) => overviewTextItem(container, mapper(item))); if (!items.length) container.textContent = "Нет данных за выбранный период."; };
@@ -918,7 +854,7 @@ function renderServices() {
   elements.servicesState.textContent = services.length ? `Услуг: ${services.length}` : "Услуг пока нет.";
   services.forEach((service) => { const row = document.createElement("tr"); const name = document.createElement("td"); const marker = document.createElement("span"); marker.className = "color-marker"; marker.style.background = service.color || "#9b5a66"; name.append(marker, document.createTextNode(service.name)); row.append(name, createCell(`${service.durationMinutes} мин`), createCell(service.price === null || service.price === undefined ? "—" : `${service.price} ₽`), createCell(String(service.employeeCount || 0)), createCell(statusText(service.active)), createManagementActions(service.id, service.active)); elements.servicesTableBody.append(row); });
 }
-async function loadServicesFromApi() { elements.servicesState.textContent = "Загружаем услуги…"; try { services = await getServices({ includeInactive: true }); renderServices(); } catch (error) { elements.servicesState.textContent = error.message || "Не удалось загрузить услуги."; } }
+async function loadServicesFromApi() { elements.servicesState.textContent = "Загружаем услуги…"; try { services = await getServices({ includeInactive: true }); populateServiceFilter(); renderServices(); } catch (error) { elements.servicesState.textContent = error.message || "Не удалось загрузить услуги."; } }
 function renderEmployeesManagement() {
   elements.employeesTableBody.replaceChildren(); elements.employeesState.textContent = managementEmployees.length ? `Сотрудников: ${managementEmployees.length}` : "Сотрудников пока нет.";
   managementEmployees.forEach((employee) => { const row = document.createElement("tr"); const name = document.createElement("td"); const marker = document.createElement("span"); marker.className = "color-marker"; marker.style.background = employee.color || "#9b5a66"; name.append(marker, document.createTextNode(employee.name)); row.append(name, createCell((employee.services || []).join(", ") || "Не назначены"), createCell(`${formatWorkingDays(employee.workingDays)} · ${employee.workingHoursStart}–${employee.workingHoursEnd}`), createCell(String(employee.futureBookingsCount || 0)), createCell(statusText(employee.active)), createManagementActions(employee.id, employee.active)); elements.employeesTableBody.append(row); });
@@ -1011,7 +947,7 @@ async function saveClient(event) {
 async function toggleMergeClient() { if (!editingClientId) return; if (!elements.clientMergePanel.hidden) { elements.clientMergePanel.hidden = true; return; } const all = await getClients({ page: 1, limit: 100, sort: "name", order: "asc" }); clients = all.clients; populateMergeTargets(editingClientId); elements.clientMergePanel.hidden = false; }
 async function confirmClientMerge() { const targetClientId = elements.clientMergeTarget.value; if (!targetClientId) { showToast("Выберите основного клиента"); return; } if (!confirm("Объединить клиентов? Все записи перейдут к основному клиенту.")) return; elements.confirmMergeClientButton.disabled = true; try { await mergeClient(editingClientId, targetClientId); elements.clientDialog.close(); await loadClientsFromApi(); showToast("Клиенты объединены, история сохранена"); } catch (error) { showToast(error.message || "Не удалось объединить клиентов"); } finally { elements.confirmMergeClientButton.disabled = false; } }
 async function handleClientAction(event) { const button = event.target.closest("button[data-client-id]"); if (button) await openClientDialog(button.dataset.clientId); }
-async function openClientHistoryBooking(event) { const button = event.target.closest("button[data-booking-id]"); if (!button) return; try { const booking = await getBooking(button.dataset.bookingId); elements.clientDialog.close(); window.location.hash = BOOKINGS_ROUTE; await openExistingBooking(normalizeBooking(booking), elements.addButton); } catch (error) { showToast(error.message || "Запись не найдена"); } }
+async function openClientHistoryBooking(event) { const button = event.target.closest("button[data-booking-id]"); if (!button) return; try { const booking = normalizeBooking(await getBooking(button.dataset.bookingId)).booking; if (!booking) throw new Error("Запись содержит неполные данные."); elements.clientDialog.close(); window.location.hash = BOOKINGS_ROUTE; await openExistingBooking(booking, elements.addButton); } catch (error) { showToast(error.message || "Запись не найдена"); } }
 
 function formatResultsCount(count) {
   const mod10 = count % 10;
@@ -1025,9 +961,18 @@ function formatResultsCount(count) {
 }
 
 function updateFilterControls(filteredCount) {
-  const filtersAreActive = elements.search.value.trim() !== "" || elements.statusFilter.value !== "all" || elements.employeeFilter.value !== "all";
+  const filters = { query: elements.search.value, status: elements.statusFilter.value, employeeId: elements.employeeFilter.value, serviceId: elements.serviceFilter.value, period: elements.periodFilter.value };
+  const filtersAreActive = hasActiveBookingFilters(filters);
   elements.resetButton.disabled = !filtersAreActive;
   elements.resultsCount.textContent = formatResultsCount(filteredCount);
+  const labels = [];
+  if (elements.search.value.trim()) labels.push(`Поиск: ${elements.search.value.trim()}`);
+  if (elements.statusFilter.value !== "all") labels.push(`Статус: ${statusLabels[elements.statusFilter.value] || "Не указан"}`);
+  if (elements.employeeFilter.value !== "all") labels.push(`Сотрудник: ${elements.employeeFilter.selectedOptions[0]?.textContent || "Выбран"}`);
+  if (elements.serviceFilter.value !== "all") labels.push(`Услуга: ${elements.serviceFilter.selectedOptions[0]?.textContent || "Выбрана"}`);
+  if (elements.periodFilter.value !== "all") labels.push({ today: "Сегодня", upcoming: "Предстоящие", past: "Прошедшие" }[elements.periodFilter.value]);
+  elements.activeFilters.textContent = labels.length ? `Фильтры: ${labels.join(" · ")}` : "";
+  elements.activeFilters.hidden = labels.length === 0;
 }
 
 function renderBookings() {
@@ -1139,9 +1084,12 @@ function renderBookingsOverview(stats) {
 }
 
 function resetFilters() {
-  elements.search.value = "";
-  elements.statusFilter.value = "all";
-  elements.employeeFilter.value = "all";
+  const filters = resetBookingFilters();
+  elements.search.value = filters.query;
+  elements.statusFilter.value = filters.status;
+  elements.employeeFilter.value = filters.employeeId;
+  elements.serviceFilter.value = filters.serviceId;
+  elements.periodFilter.value = filters.period;
   renderBookings();
   elements.search.focus();
 }
@@ -1334,32 +1282,6 @@ async function openExistingBooking(booking, trigger = document.activeElement) {
   elements.clientName.focus();
 }
 
-function legacyValidateBookingForm() {
-  const clientName = elements.clientName.value.trim();
-  const phoneDigits = elements.phone.value.replace(/\D/g, "");
-
-  elements.clientName.setCustomValidity(clientName.length >= 2 ? "" : "Введите минимум 2 символа");
-  elements.phone.setCustomValidity(phoneDigits.length >= 10 ? "" : "Введите не менее 10 цифр");
-  elements.service.setCustomValidity(
-    VALID_SERVICES.has(elements.service.value) ? "" : "Выберите услугу из списка"
-  );
-
-  return elements.bookingForm.reportValidity();
-}
-
-function legacyGetFormData() {
-  return {
-    clientName: elements.clientName.value.trim(),
-    phone: elements.phone.value.trim(),
-    service: elements.service.value,
-    date: elements.bookingDate.value,
-    time: elements.bookingTime.value,
-    status: elements.bookingStatus.value || null,
-    comment: elements.comment.value.trim()
-  };
-}
-
-// The form is deliberately checked against API identifiers rather than legacy display names.
 function validateBookingForm() {
   const clientName = elements.clientName.value.trim();
   const phoneDigits = elements.phone.value.replace(/\D/g, "");
@@ -1415,12 +1337,14 @@ async function changeBookingStatus(status) {
   const buttons = [elements.confirmBookingButton, elements.completeBookingButton, elements.cancelBookingButton, elements.restoreBookingButton];
   buttons.forEach((button) => { button.disabled = true; });
   try {
-    const booking = status === "cancelled"
-      ? await cancelBooking(editingBookingId)
-      : status === "restore"
-        ? await restoreBooking(editingBookingId)
-        : await updateBookingStatus(editingBookingId, status);
-    await refreshAfterBookingMutation(booking.id);
+    await updateBookingStatusSafely({
+      bookingId: editingBookingId,
+      status,
+      updateStatus: updateBookingStatus,
+      cancel: cancelBooking,
+      restore: restoreBooking,
+      refresh: refreshAfterBookingMutation,
+    });
     closeBookingDialog({ force: true });
     showToast("Статус заявки обновлён");
   } catch (error) {
@@ -1532,6 +1456,7 @@ function startDashboard() {
   loadDashboardSettings();
   renderStats();
   loadEmployeesFromApi();
+  loadServicesFromApi();
   loadBookingsFromApi();
 }
 
@@ -1580,6 +1505,8 @@ function logout() {
 elements.search.addEventListener("input", renderBookings);
 elements.statusFilter.addEventListener("change", renderBookings);
 elements.employeeFilter.addEventListener("change", renderBookings);
+elements.serviceFilter.addEventListener("change", renderBookings);
+elements.periodFilter.addEventListener("change", renderBookings);
 elements.calendarEmployeeFilter.addEventListener("change", loadCalendarBookings);
 elements.sort.addEventListener("change", renderBookings);
 elements.resetButton.addEventListener("click", resetFilters);
